@@ -34,21 +34,21 @@ plush('...complete.\n\n');
 new_ratings = zeros(size(Y, 1), 1);
 new_ratings(1) = 4;
 new_ratings(7) = 3;
-new_ratings(12)= 5;
+new_ratings(12) = 5;
 new_ratings(54) = 4;
-new_ratings(64)= 5;
-new_ratings(66)= 3;
+new_ratings(64) = 5;
+new_ratings(66) = 3;
 new_ratings(69) = 5;
 new_ratings(98) = 2;
 new_ratings(183) = 4;
 new_ratings(226) = 5;
-new_ratings(355)= 5;
+new_ratings(355) = 5;
 
 plush('You rated:\n');
 for i = 1 : length(new_ratings)
-    if new_ratings(i) > 0 
+    if new_ratings(i) > 0
         fprintf('\t%.1f for %s\n', ...
-			new_ratings(i), map_id_name{i});
+                 new_ratings(i), map_id_name{i});
     end
 end
 plush('\n');
@@ -83,14 +83,16 @@ Theta = randn(num_users, num_features);
 % fold the parameters into a single row vector
 initial_params = [X(:); Theta(:)];
 
-%%%%% TODO - should this train on Y_norm? currently on Y
 %%%%% TODO - test lambda and iteration and num_features values
 
 % set options for fmincg (including iterations) and run the training
-options = optimset('GradObj', 'on', 'MaxIter', iterations);
-theta = fmincg (@(t)(collabFilter(t, Y, R, num_users, num_movies, ...
+% on the normalized Y values
+t_start = time();  %%%%% TODO - try fminunc with TolFun
+options = optimset('MaxIter', iterations); %('TolFun', 0.0001);
+theta = fmincg (@(t)(collabFilter(t, Y_norm, R, num_users, num_movies, ...
                                   num_features, lambda)), ...
                      initial_params, options);
+fprintf('Training took %d seconds.\n', time() - t_start);
 
 % unfold the returned values
 X = reshape(theta(1:num_movies*num_features), num_movies, num_features);
@@ -103,9 +105,6 @@ plush('...complete.\n\n');
 recom_matrix = X * Theta';
 pred = recom_matrix(:,1) + Y_mean;
 
-% scale ratings to 1-5 instead of 1-10
-pred = pred ./ 2;
-
 % sort the vector to get the highest rating movies first
 [x, ix] = sort(pred, 'descend');
 
@@ -117,4 +116,3 @@ for i = 1 : 10
 end
 
 plush('\n');
-
