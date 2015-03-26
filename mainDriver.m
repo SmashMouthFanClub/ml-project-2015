@@ -7,6 +7,12 @@
 % movie recommendations for a given user.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+
+%%%%% TODO - Anthony: divide the data into training/CV/test and perform
+%%%%%      - appropriate cross-validation and tests, reporting stats for
+%%%%%      - how well our predictions perform.
+
+
 % data matrix and movie title file locations
 f_movie_matrix = 'data/movies.mat';
 f_movie_titles = 'data/movie_titles.txt';
@@ -29,6 +35,8 @@ map_id_name = loadMovieIDNameMap(f_movie_titles);
 plush('...complete.\n\n');
 
 %%%%% TODO - make this part interactive: for now, use Ng's example
+%%%%%      - (Mike will handle interactivity, Anthony may need to
+%%%%%      - touch this part of code for training/CV/test set validation)
 
 % add a new user's ratings to the system
 new_ratings = zeros(size(Y, 1), 1);
@@ -79,15 +87,16 @@ num_users = size(Y, 2);
 X = randn(num_movies, num_features);
 Theta = randn(num_users, num_features);
 
-%%%%% TODO - do we realllyyyyy need to be folding/unfolding?
+%%%%% TODO - Mike: do we realllyyyyy need to be folding/unfolding?
 % fold the parameters into a single row vector
 initial_params = [X(:); Theta(:)];
 
-%%%%% TODO - test lambda and iteration and num_features values
+%%%%% TODO - Mike: test lambda and iteration and num_features values
+%%%%%      - once we get new data in to find best performance
 
 % set options for fmincg (including iterations) and run the training
 % on the normalized Y values
-t_start = time();  %%%%% TODO - try fminunc with TolFun
+t_start = time();  %%%%% TODO - Mike: try fminunc with TolFun
 options = optimset('MaxIter', iterations); %('TolFun', 0.0001);
 theta = fmincg (@(t)(collabFilter(t, Y_norm, R, num_users, num_movies, ...
                                   num_features, lambda)), ...
@@ -101,8 +110,13 @@ Theta = reshape(theta(num_movies*num_features+1:end), ...
 
 plush('...complete.\n\n');
 
-% make the user's recommendation
+% get the recommendation matrix
 recom_matrix = X * Theta';
+
+% use SVD to reduce the dimensionality of the matrix
+[recom_matrix, Y_mean] = svdReduce(recom_matrix, Y_mean);
+
+% make a prediction for the user
 pred = recom_matrix(:,1) + Y_mean;
 
 % sort the vector to get the highest rating movies first
