@@ -17,6 +17,8 @@ function [recom_svd, Y_svd] = svdReduce(recom_matrix, Y_mean)
 %%%%% - IMPORTANT NOTE:
 %%%%% - whichever rows you eliminate from recom_matrix you MUST also remove from
 %%%%% - Y_mean since later we row-wise add the these matrices.
+%%%%% - More Notes:
+%%%%% - Going based on this: http://infolab.stanford.edu/~ullman/mmds/ch11.pdf
 
 recom_svd = recom_matrix;
 Y_svd = Y_mean;
