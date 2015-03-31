@@ -27,20 +27,23 @@ Y_svd = Y_mean;
 
 D = diag(S);
 energy = sum(D .^ 2);
+current = energy;
 
 for i = 1:(size(D, 1));
     [val index] = min(D);
 
+    current = current - (D(index) .^ 2);
+
     D(index) = Inf;
     S(index, :) = 0;
 
-    E = diag(S);
-
-    if ((sum(E .^ 2) / energy)  < 0.9)
+    if ((current / energy)  < 0.9)
 	 break;
     endif
 endfor
 
 recom_svd = U * S * V;
+
+printf("SVD Energy: %d%%\n\n", (current / energy) * 100);
 
 end
