@@ -28,16 +28,19 @@ Y_svd = Y_mean;
 D = diag(S);
 energy = sum(D .^ 2);
 
-for i = 1:(size(D, 1) / 2)
+for i = 1:(size(D, 1));
     [val index] = min(D);
 
     D(index) = Inf;
     S(index, :) = 0;
+
+    E = diag(S);
+
+    if ((sum(E .^ 2) / energy)  < 0.9)
+	 break;
+    endif
 endfor
 
-D = diag(S);
-energy2  = sum(D .^ 2);
-
-energy2 / energy
+recom_svd = U * S * V;
 
 end
