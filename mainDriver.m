@@ -10,6 +10,7 @@
 %%%%% TODO - Divide the data into training/CV/test and perform
 %%%%%      - appropriate cross-validation and tests, reporting stats for
 %%%%%      - how well our predictions perform.
+clc;
 
 % data matrix and movie title file locations
 f_movie_matrix = 'data/movies.mat';
@@ -21,10 +22,6 @@ plush('\nLoading movie rating data...\n');
 % this will load a matrix Y containing movie ratings where the rows
 % are movies and columns are users
 load(f_movie_matrix);
-
-% map R(i,j) to 1 if Y(i,j) is > 0, and 0 otherwise
-%R = (Y > 0);
-
 plush('...complete.\n\n');
 
 % load in movie titles
@@ -64,16 +61,23 @@ plush('Using fmincg to train collaborative filtering model...\n');
 
 % add the new ratings to the data
 Y = [new_ratings Y];
-R = (Y > 0);%[(new_ratings != 0) R];
+
+% map R(i,j) to 1 if Y(i,j) is > 0, and 0 otherwise
+R = (Y > 0);
 
 % perform mean normalization
 [Y_norm, Y_mean] = meanNormData(Y, R);
 
 % initialize the number of features to use, regularization parameter,
 % and number of iterations to train with
-num_features = 100;
+num_features = 30;
 lambda = 10;
 iterations = 100;
+
+printf('\tFeature count: %d\n', num_features);
+printf('\tLambda:        %d\n', lambda);
+printf('\tIterations:    %d\n', iterations);
+plush('');
 
 % number of movies are rows, number of users are columns
 num_movies = size(Y, 1);
@@ -92,10 +96,15 @@ initial_params = [X(:); Theta(:)];
 
 %%%%% TODO - why does training on Y_norm and adding back Y_mean
 %%%%%      - only recommend the best rated movies?
+%%%%% - answer: because Y_mean = 5 when only 1 user rated 1
+%%%%% -         movie a 5.
+
+%%%%% TODO - maybe we weight each rating by the number of users
+%%%%%      - that rated that movie
 
 % set options for fmincg (including iterations) and run the training
 %%%%% TODO - report stats on training on Y vs Y_norm
-t_start = time();  %%%%% TODO - Mike: try fminunc with TolFun
+t_start = time();  %%%%% TODO - try fminunc with TolFun
 options = optimset('GradObj', 'on', 'MaxIter', iterations);
 thetafold = fmincg (@(t)(collabFilter(t, Y_norm, R, num_users, num_movies, ...
                                   num_features, lambda)), ...
@@ -122,6 +131,8 @@ pred = recom_matrix(:,1) + Y_mean;
 
 % sort the vector to get the highest rating movies first
 [x, ix] = sort(pred, 'descend');
+
+%%%%% TODO - threshold to 0 the movies the user already watched
 
 % print top 10 recommendations
 plush('Our top 10 recommendations for you:\n');
@@ -150,6 +161,6 @@ for i = 1 : size(Y,1)
 end
 
 err = (1 - (correct / total)) * 100;
-printf("%f\n", err);
+printf("%f%%\n", err);
 
 plush('\n');
