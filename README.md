@@ -1,4 +1,4 @@
-## Movie Recommendations Through Streaming and Explicit Rating Data ##
+### Movie Recommendations Through Streaming and Explicit Rating Data ###
 ##### Machine Learning Project #####
 ##### Mike Stowell, Anthony Salani, Misael Moscat #####
 
