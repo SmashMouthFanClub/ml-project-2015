@@ -54,7 +54,7 @@ new_ratings(355) = 5;
 
 plush('You rated:\n');
 for i = 1 : length(new_ratings)
-    if new_ratings(i) > 0
+    if (new_ratings(i) > 0)
         fprintf('\t%.1f for %s\n', ...
                  new_ratings(i), map_id_name{i});
     end
@@ -68,7 +68,7 @@ plush('Using fmincg to train collaborative filtering model...\n');
 
 % add the new ratings to the data
 Y = [new_ratings Y];
-R = [(new_ratings ~= 0) R];
+R = [(new_ratings != 0) R];
 
 % perform mean normalization
 [Y_norm, Y_mean] = meanNormData(Y, R);
@@ -96,16 +96,17 @@ initial_params = [X(:); Theta(:)];
 
 % set options for fmincg (including iterations) and run the training
 % on the normalized Y values
+%%%%% TODO - report stats on training on Y vs Y_norm
 t_start = time();  %%%%% TODO - Mike: try fminunc with TolFun
 options = optimset('MaxIter', iterations); %('TolFun', 0.0001);
-theta = fmincg (@(t)(collabFilter(t, Y_norm, R, num_users, num_movies, ...
+thetafold = fmincg (@(t)(collabFilter(t, Y_norm, R, num_users, num_movies, ...
                                   num_features, lambda)), ...
                      initial_params, options);
 fprintf('Training took %d seconds.\n', time() - t_start);
 
 % unfold the returned values
-X = reshape(theta(1:num_movies*num_features), num_movies, num_features);
-Theta = reshape(theta(num_movies*num_features+1:end), ...
+X = reshape(thetafold(1:num_movies*num_features), num_movies, num_features);
+Theta = reshape(thetafold(num_movies*num_features+1:end), ...
                 num_users, num_features);
 
 plush('...complete.\n\n');
@@ -114,7 +115,9 @@ plush('...complete.\n\n');
 recom_matrix = X * Theta';
 
 % use SVD to reduce the dimensionality of the matrix
+plush('Dimensionality reduction with SVD...\n');
 [recom_matrix, Y_mean] = svdReduce(recom_matrix, Y_mean);
+plush('...complete.\n\n');
 
 % make a prediction for the user
 pred = recom_matrix(:,1) + Y_mean;

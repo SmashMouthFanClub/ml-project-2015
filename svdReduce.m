@@ -38,12 +38,12 @@ for i = 1:(size(D, 1));
     S(index, :) = 0;
 
     if ((current / energy)  < 0.9)
-	 break;
+        break;
     endif
 endfor
 
-recom_svd = U * S * V;
+recom_svd = U * S * V';
 
-printf("SVD Energy: %d%%\n\n", (current / energy) * 100);
+printf("SVD Energy: %d%%\n", (current / energy) * 100);
 
 end
