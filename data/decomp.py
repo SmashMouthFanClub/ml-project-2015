@@ -33,6 +33,15 @@ genreFiles = [
   'raw/genres.list.1'
 ]
 
+sectionRegex = re.compile('^(\d)\:')
+line4Regex = re.compile('^(4)\:')
+line5Regex = re.compile('^(5)\:')
+movieTitleRegex = re.compile('^((?:\".*?\")|(?:.*?)) \(.*$')
+tagCountRegex = re.compile('(.+) \((\d+)')
+movieTagRegex = re.compile('^((?:\".*?\")|(?:.*?)) \(.*\t+(.*)$')
+genreCountRegex = re.compile('^(.+?)[\t ]+(\d+)$')
+
+
 ################################################################################
 # 
 ################################################################################
@@ -50,8 +59,7 @@ def listTags(movies, tags, files):
   
   for line in files:
     if state == 4:
-      regex = re.compile('^(5)\:')
-      match = regex.match(line)
+      match = line5Regex.match(line)
       if match == None:
         tags.extend(getTagCounts(line))
       else:
@@ -61,8 +69,7 @@ def listTags(movies, tags, files):
       if movieTag != None and movieTag[0] in movies:
         movies[movieTag[0]].append(movieTag[1])
     else:
-      regex = re.compile('^(\d)\:')
-      match = regex.match(line)
+      match = sectionRegex.match(line)
       if match != None:
         state = int(match.group(1))
 
@@ -74,8 +81,7 @@ def listGenresAsTags(movies, tags, files):
 
   for line in files:
     if state == 3:
-      regex = re.compile('^(4)\:')
-      match = regex.match(line)
+      match = line4Regex.match(line)
       if match == None:
         genre = getGenreCount(line)
         if genre != None:
@@ -87,8 +93,7 @@ def listGenresAsTags(movies, tags, files):
       if genreTag != None and genreTag[0] in movies:
         movies[genreTag[0]].append(genreTag[1])
     else:
-      regex = re.compile('^(\d)\:')
-      match = regex.match(line)
+      match = sectionRegex.match(line)
       if match != None:
         state = int(match.group(1))
 
@@ -103,9 +108,6 @@ def pruneOrphanMovies(movies, minTags):
     movies.pop(orphan)
   return stats
 
-def substitueTags(movies, tags):
-  1
-
 ################################################################################
 # Opens a bunch of files at once for reading                                   #
 ################################################################################
@@ -119,8 +121,7 @@ def batchOpen(files):
 ################################################################################
 
 def getMovieTitle(line):
-  regex = re.compile('^((?:\".*?\")|(?:.*?)) \(.*$')
-  match = regex.match(line)
+  match = movieTitleRegex.match(line)
   if match == None:
     return None
   else:
@@ -129,24 +130,21 @@ def getMovieTitle(line):
 def getTagCounts(line):
   outTags = []
   tags = line.split(')')
-  regex = re.compile('(.+) \((\d+)')
   for tag in tags:
-    match = regex.match(tag.strip())
+    match = tagCountRegex.match(tag.strip())
     if match != None:
       outTags.append((match.group(1), int(match.group(2))))
   return outTags
 
 def getMovieTag(line):
-  regex = re.compile('^((?:\".*?\")|(?:.*?)) \(.*\t+(.*)$')
-  match = regex.match(line)
+  match = movieTagRegex.match(line)
   if match == None:
     return None
   else:
     return (match.group(1).strip('"'), match.group(2).strip().lower())
 
 def getGenreCount(line):
-  regex = re.compile('^(.+?)[\t ]+(\d+)$')
-  match = regex.match(line)
+  match = genreCountRegex.match(line)
   if match == None:
     return None
   else:
@@ -159,7 +157,4 @@ if __name__ == '__main__':
   listMovies(movies, movieFiles)
   listTags(movies, tags, tagFiles)
   listGenresAsTags(movies, tags, genreFiles)
-
-  pruneOrphanMovies(movies, 1))
-
-  substituteTags(movies, tags)
+  print(pruneOrphanMovies(movies, 1))
