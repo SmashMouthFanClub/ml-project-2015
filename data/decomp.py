@@ -4,8 +4,8 @@ import re
 import string
 
 # files to produce:
-#   tags.txt:    tag id :: tag name :: occurences
-#   movies.txt:  movie id :: movie name :: tag id #1, tag id #2, ....
+#   tags.txt:    tag id :: tag name :: # occurences
+#   movies.txt:  movie id :: movie name :: # ratings :: tag ids
 #   ratings.txt: user id :: movie id :: rating
 #
 #   given a user's list of movie ratings, find those movies in the movies.txt
@@ -33,6 +33,19 @@ genreFiles = [
   'raw/genres.list.1'
 ]
 
+lensFiles = [
+  'raw/movies.dat.0'
+]
+
+ratingFiles = [
+  'raw/ratings.dat.0',
+  'raw/ratings.dat.1',
+  'raw/ratings.dat.2',
+  'raw/ratings.dat.3',
+  'raw/ratings.dat.4',
+  'raw/ratings.dat.5'
+]
+
 sectionRegex = re.compile('^(\d)\:')
 line4Regex = re.compile('^(4)\:')
 line5Regex = re.compile('^(5)\:')
@@ -40,6 +53,8 @@ movieTitleRegex = re.compile('^((?:\".*?\")|(?:.*?)) \(.*$')
 tagCountRegex = re.compile('(.+) \((\d+)')
 movieTagRegex = re.compile('^((?:\".*?\")|(?:.*?)) \(.*\t+(.*)$')
 genreCountRegex = re.compile('^(.+?)[\t ]+(\d+)$')
+lensRegex = re.compile('^(\d+)::(.*?) \(.*?::.*$')
+lensArticleRegex = re.compile('^(.*?), ?(The|A|An|Los|Les)$')
 
 
 ################################################################################
@@ -97,6 +112,25 @@ def listGenresAsTags(movies, tags, files):
       if match != None:
         state = int(match.group(1))
 
+def listMovieRatings(movies, files):
+  files = batchOpen(files)
+  good = 0
+  bad = 0
+
+  lensIDs = {}
+
+  for line in files:
+    movie = getLensMovie(line)
+    if movie[1] in movies:
+      lensIDs[movie[1]] = movie[0]
+      good += 1
+    else:
+      print(movie[1])
+      bad += 1
+
+  print(lensIDs)
+  #print(good, bad, good / (good + bad))
+
 def pruneOrphanMovies(movies, minTags):
   orphanList = []
   for movie in movies.keys():
@@ -107,6 +141,18 @@ def pruneOrphanMovies(movies, minTags):
   for orphan in orphanList:
     movies.pop(orphan)
   return stats
+
+def enumerateTags(tags, tagIDs):
+  for idx, tag in enumerate(tags):
+    tagIDs[tag[0]] = str(idx)
+
+def serializeMovies(movies, tags, tagIDs, outFile):
+  for idx, key in enumerate(movies.keys()):
+    movieTagIDs = ','.join([tagIDs[tag] for tag in movies[key]])
+    print('{}::{}::{}'.format(idx, key, movieTagIDs))
+
+def serializeTags(movies, tags, tagIDs, outFile):
+  1
 
 ################################################################################
 # Opens a bunch of files at once for reading                                   #
@@ -150,11 +196,38 @@ def getGenreCount(line):
   else:
     return (match.group(1).strip().lower(), int(match.group(2)))
 
+def getLensMovie(line):
+  match = lensRegex.match(line)
+  if match == None:
+    return None
+  else:
+    movieTitle = match.group(2).strip()
+    theMatch = lensArticleRegex.match(movieTitle)
+    if theMatch == None:
+      return (match.group(1), movieTitle)
+    else:
+      return (match.group(1), theMatch.group(2) + ' ' + theMatch.group(1))
+
 if __name__ == '__main__':
   movies = {}
+  movieIDs = {}
+  movieTags = {}
+  movieRatings = {}
+
   tags = []
+  tagIDs = {}
 
   listMovies(movies, movieFiles)
+
+  '''
   listTags(movies, tags, tagFiles)
   listGenresAsTags(movies, tags, genreFiles)
-  print(pruneOrphanMovies(movies, 1))
+  
+  pruneOrphanMovies(movies, 1)
+  enumerateTags(tags, tagIDs)
+
+  serializeMovies(movies, tags, tagIDs, 'parsed.movies.txt')
+  serializeTags(movies, tags, tagIDs, 'parsed.tags.txt')
+  '''
+
+  listMovieRatings(movies, lensFiles)
