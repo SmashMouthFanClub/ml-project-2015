@@ -61,12 +61,14 @@ lensArticleRegex = re.compile('^(.*?), ?(The|A|An|Los|Les)$')
 # 
 ################################################################################
 
-def listMovies(movies, files):
+def listMovies(movies, movieTags, movieRatings, files):
   files = batchOpen(files)
   for line in files:
     title = getMovieTitle(line)
     if title != None:
-      movies[title] = []
+      movies.append(title)
+      movieTags[title] = []
+      movieRatings[title] = 0
 
 def listTags(movies, tags, files):
   files = batchOpen(files)
@@ -128,10 +130,7 @@ def listMovieRatings(movies, files):
       print(movie[1])
       bad += 1
 
-  print(lensIDs)
-  #print(good, bad, good / (good + bad))
-
-def pruneOrphanMovies(movies, minTags):
+def pruneOrphanMovies(movies, movieTags, minTags):
   orphanList = []
   for movie in movies.keys():
     tags = movies[movie]
@@ -141,6 +140,10 @@ def pruneOrphanMovies(movies, minTags):
   for orphan in orphanList:
     movies.pop(orphan)
   return stats
+
+def enumerateMovies(movies, movieIDs):
+  for idx, movie in enumerate(movies):
+    movieIDs[movie] = str(idx)
 
 def enumerateTags(tags, tagIDs):
   for idx, tag in enumerate(tags):
@@ -209,7 +212,7 @@ def getLensMovie(line):
       return (match.group(1), theMatch.group(2) + ' ' + theMatch.group(1))
 
 if __name__ == '__main__':
-  movies = {}
+  movies = []
   movieIDs = {}
   movieTags = {}
   movieRatings = {}
@@ -217,17 +220,17 @@ if __name__ == '__main__':
   tags = []
   tagIDs = {}
 
-  listMovies(movies, movieFiles)
+  listMovies(movies, movieTags, movieRatings, movieFiles)
+  enumerateMovies(movies, movieIDs)
 
-  '''
-  listTags(movies, tags, tagFiles)
-  listGenresAsTags(movies, tags, genreFiles)
-  
-  pruneOrphanMovies(movies, 1)
+  listTags(movieTags, tags, tagFiles)
+  listGenresAsTags(movieTags, tags, genreFiles)
+  pruneOrphanMovies(movies, movieTags, 1)
   enumerateTags(tags, tagIDs)
 
-  serializeMovies(movies, tags, tagIDs, 'parsed.movies.txt')
-  serializeTags(movies, tags, tagIDs, 'parsed.tags.txt')
-  '''
+  #listMovieRatings(movies, lensFiles)
+  
 
-  listMovieRatings(movies, lensFiles)
+
+  #serializeMovies(movies, tags, tagIDs, 'parsed.movies.txt')
+  #serializeTags(movies, tags, tagIDs, 'parsed.tags.txt')
