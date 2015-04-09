@@ -1,18 +1,21 @@
 from operator import itemgetter
+import codecs
 import itertools
 import re
 import string
 
-# files to produce:
-#   tags.txt:    tag id :: tag name :: # occurences
-#   movies.txt:  movie id :: movie name :: # ratings :: tag ids
-#   ratings.txt: user id :: movie id :: rating
-#
-#   given a user's list of movie ratings, find those movies in the movies.txt
-#    file.  take each tag, and average the scores of the movies with each tag.
-#    this creates the user's ratings of individual tags - gaps should be an
-#    average value (0, 2.5, etc...).
-#   then, construct the .mat file using the above method for every other user
+################################################################################
+# files to produce:                                                            #
+#   tags.txt:    tag id :: tag name :: # occurences                            #
+#   movies.txt:  movie id :: movie name :: # ratings :: tag ids                #
+#   ratings.txt: user id :: movie id :: rating                                 #
+#                                                                              #
+#   given a user's list of movie ratings, find those movies in the movies.txt  #
+#    file.  take each tag, and average the scores of the movies with each tag. #
+#    this creates the user's ratings of individual tags - gaps should be an    #
+#    average value (0, 2.5, etc...).                                           #
+#   then, construct the .mat file using the above method for every other user  #
+################################################################################
 
 movieFiles = [
   'raw/movies.list.0',
@@ -54,24 +57,27 @@ tagCountRegex = re.compile('(.+) \((\d+)')
 movieTagRegex = re.compile('^((?:\".*?\")|(?:.*?)) \(.*\t+(.*)$')
 genreCountRegex = re.compile('^(.+?)[\t ]+(\d+)$')
 lensRegex = re.compile('^(\d+)::(.*?) \(.*?::.*$')
-lensArticleRegex = re.compile('^(.*?), ?(The|A|An|Los|Les)$')
+lensArticleRegex = re.compile('^(.*?), ?(The|A|An|Los|Les|La|Le|El|L\')$')
+romanNumerals
 
 
 ################################################################################
-# 
+# Parsing functions.  Because every set of files is entirely different in how  #
+#   they are structured, each file gets its own function with a vastly         #
+#   different function signature.  By far the most expensive part is here.     #
 ################################################################################
 
 def listMovies(movies, movieTags, movieRatings, files):
-  files = batchOpen(files)
+  files = batchOpen(files, encoding = 'iso-8859-1')
   for line in files:
     title = getMovieTitle(line)
-    if title != None:
+    if title != None and title not in movieTags:
       movies.append(title)
       movieTags[title] = []
       movieRatings[title] = 0
 
 def listTags(movies, tags, files):
-  files = batchOpen(files)
+  files = batchOpen(files, encoding = 'iso-8859-1')
   state = 0
   
   for line in files:
@@ -93,7 +99,7 @@ def listTags(movies, tags, files):
   sorted(tags, key = itemgetter(1))
 
 def listGenresAsTags(movies, tags, files):
-  files = batchOpen(files)
+  files = batchOpen(files, encoding = 'iso-8859-1')
   state = 0
 
   for line in files:
@@ -114,32 +120,56 @@ def listGenresAsTags(movies, tags, files):
       if match != None:
         state = int(match.group(1))
 
-def listMovieRatings(movies, files):
+def listMovieRatings(movies, movieRatings, files):
   files = batchOpen(files)
   good = 0
   bad = 0
+  err = 0
 
   lensIDs = {}
 
   for line in files:
     movie = getLensMovie(line)
-    if movie[1] in movies:
+    if movie != None and movie[1] in movieRatings:
       lensIDs[movie[1]] = movie[0]
       good += 1
-    else:
+    elif movie != None:
       print(movie[1])
       bad += 1
+    else:
+      print('ERR:', line)
+      err += 1
+
+  print(good, bad, err)
+
+################################################################################
+# Pruning movies/tags/ratings that have no associated movies/tags/ratings      #
+# Probably will move this functionality to the other file.  Already performing #
+#   minimal pruning during the parse step (ex: ignoring tags for movies not in #
+#   the database, ignoring ratings for movies not in the database).  A more    #
+#   comprehensive pruning should be done when generating specific datasets to  #
+#   guarantee no data is permanently lost.                                     #
+################################################################################
 
 def pruneOrphanMovies(movies, movieTags, minTags):
+  moviesList = []
   orphanList = []
-  for movie in movies.keys():
-    tags = movies[movie]
-    if len(tags) <= minTags:
-      orphanList.append(movie)
-  stats = (len(orphanList), len(movies), len(orphanList) / len(movies))
+  for movie in movies:
+    tags = movieTags[movie]
+    (moviesList if len(tags) > minTags else orphanList).append(movie)
+  stats = (len(orphanList), len(moviesList), len(orphanList) / len(movies))
   for orphan in orphanList:
-    movies.pop(orphan)
+    movieTags.pop(orphan)
+  movies[:] = moviesList
   return stats
+
+################################################################################
+# Enumeration allows for a smaller file size.  Instead of repeating "Godzilla  #
+#   vs. Mechagodzilla" or "wwii-post-war-drama", it will repeat smaller        #
+#   numbers like "54060" and "675393".  This is a guaranteed win as long as    #
+#   the movie or tag title is more than six characters, which is the vast      #
+#   majority of them.                                                          #
+################################################################################
 
 def enumerateMovies(movies, movieIDs):
   for idx, movie in enumerate(movies):
@@ -149,24 +179,32 @@ def enumerateTags(tags, tagIDs):
   for idx, tag in enumerate(tags):
     tagIDs[tag[0]] = str(idx)
 
+################################################################################
+# Serialization just takes each list of movies/tags/ratings and outputs a file #
+#   that is sane and requires very little work to extract data from.           #
+################################################################################
+
 def serializeMovies(movies, tags, tagIDs, outFile):
   for idx, key in enumerate(movies.keys()):
     movieTagIDs = ','.join([tagIDs[tag] for tag in movies[key]])
-    print('{}::{}::{}'.format(idx, key, movieTagIDs))
+    #print('{}::{}::{}'.format(idx, key, movieTagIDs))
 
 def serializeTags(movies, tags, tagIDs, outFile):
   1
 
 ################################################################################
-# Opens a bunch of files at once for reading                                   #
+# Opens a bunch of files at once for reading.                                  #
 ################################################################################
 
-def batchOpen(files):
-  files = [open(f, 'r', errors = 'replace') for f in files]
+def batchOpen(files, encoding=None):
+  if encoding == None:
+    files = [open(f, 'r') for f in files]
+  else:
+    files = [codecs.open(f, 'r', encoding) for f in files]
   return itertools.chain.from_iterable(files)
 
 ################################################################################
-# Functions for extracting information from various file formats               #
+# Functions for extracting information from various file formats.              #
 ################################################################################
 
 def getMovieTitle(line):
@@ -211,6 +249,25 @@ def getLensMovie(line):
     else:
       return (match.group(1), theMatch.group(2) + ' ' + theMatch.group(1))
 
+################################################################################
+# Takes a movie title and permutes a bunch of possible alternate titles
+################################################################################
+
+def permuteTitles(title):
+
+################################################################################
+# Converts a given title to a simplified version.  Simplified titles are       #
+# lacking capitalization, spaces, punctuation, etc...                          #
+# Numberes are also converted to Roman numerals.                               #
+################################################################################
+
+def simplifyTitle(title):
+
+
+################################################################################
+# Main driver.                                                                 #
+################################################################################
+
 if __name__ == '__main__':
   movies = []
   movieIDs = {}
@@ -221,16 +278,16 @@ if __name__ == '__main__':
   tagIDs = {}
 
   listMovies(movies, movieTags, movieRatings, movieFiles)
-  enumerateMovies(movies, movieIDs)
-
   listTags(movieTags, tags, tagFiles)
   listGenresAsTags(movieTags, tags, genreFiles)
-  pruneOrphanMovies(movies, movieTags, 1)
-  enumerateTags(tags, tagIDs)
+  listMovieRatings(movies, movieRatings, lensFiles)
 
-  #listMovieRatings(movies, lensFiles)
-  
+  #pruneOrphanMovies(movies, movieTags, 1)
+  #pruneOrphanTags()
 
+  #enumerateMovies(movies, movieIDs)
+  #enumerateTags(tags, tagIDs)
 
   #serializeMovies(movies, tags, tagIDs, 'parsed.movies.txt')
   #serializeTags(movies, tags, tagIDs, 'parsed.tags.txt')
+
