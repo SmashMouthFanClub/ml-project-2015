@@ -1,4 +1,4 @@
-function [X, fX, i] = fmincg(f, X, options, P1, P2, P3, P4, P5)
+function [X, costJ, fX, i] = fmincg(f, X, options, P1, P2, P3, P4, P5)
 % Minimize a continuous differentialble multivariate function. Starting point
 % is given by "X" (D by 1), and the function named in the string "f", must
 % return a function value and a vector of partial derivatives. The Polack-
@@ -48,6 +48,7 @@ function [X, fX, i] = fmincg(f, X, options, P1, P2, P3, P4, P5)
 %
 % Changes by Mike Stowell:
 % 1) change operators to short-circuiting to avoid warnings
+% 2) return cost J
 
 % Read options
 if exist('options', 'var') && ~isempty(options) && isfield(options, 'MaxIter')
@@ -56,6 +57,7 @@ else
     length = 100;
 end
 
+costJ = zeros(length,1);
 
 RHO = 0.01;                            % a bunch of constants for line searches
 SIG = 0.5;       % RHO and SIG are the constants in the Wolfe-Powell conditions
@@ -149,6 +151,7 @@ while i < abs(length)                                      % while not finished
   if success                                         % if line search succeeded
     f1 = f2; fX = [fX' f1]';
     fprintf('%s %4i | Cost: %4.6e\r', S, i, f1);
+    costJ(i) = f1;
     s = (df2'*df2-df1'*df2)/(df1'*df1)*s - df2;      % Polack-Ribiere direction
     tmp = df1; df1 = df2; df2 = tmp;                         % swap derivatives
     d2 = df1'*s;

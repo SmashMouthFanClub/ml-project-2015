@@ -10,7 +10,7 @@
 %%%%% TODO - Divide the data into training/CV/test and perform
 %%%%%      - appropriate cross-validation and tests, reporting stats for
 %%%%%      - how well our predictions perform.
-clc;
+clc; close all; clear;
 
 % data matrix and movie title file locations
 f_movie_matrix = 'data/movies.mat';
@@ -28,8 +28,6 @@ plush('...complete.\n\n');
 plush('Matching movie IDs to titles...\n');
 map_id_name = loadMovieIDNameMap(f_movie_titles);
 plush('...complete.\n\n');
-
-%%%%% TODO - make this part interactive: for now, use Ng's example
 
 % add a new user's ratings to the system
 new_ratings = zeros(size(Y, 1), 1);
@@ -53,8 +51,6 @@ for i = 1 : length(new_ratings)
     end
 end
 plush('\n');
-
-%%%%% END TODO - make this part interactive
 
 % use collaborative filtering to train the model on the movie rating data
 plush('Using fmincg to train collaborative filtering model...\n');
@@ -87,7 +83,6 @@ num_users = size(Y, 2);
 X = randn(num_movies, num_features);
 Theta = randn(num_users, num_features);
 
-%%%%% TODO - do we realllyyyyy need to be folding/unfolding?
 % fold the parameters into a single row vector
 initial_params = [X(:); Theta(:)];
 
@@ -106,8 +101,8 @@ initial_params = [X(:); Theta(:)];
 %%%%% TODO - report stats on training on Y vs Y_norm
 t_start = time();  %%%%% TODO - try fminunc with TolFun
 options = optimset('GradObj', 'on', 'MaxIter', iterations);
-thetafold = fmincg (@(t)(collabFilter(t, Y_norm, R, num_users, num_movies, ...
-                                  num_features, lambda)), ...
+[thetafold, costJ] = fmincg (@(t)(collabFilter(t, Y_norm, R, num_users, ...
+                                  num_movies, num_features, lambda)), ...
                      initial_params, options);
 fprintf('Training took %d seconds.\n', time() - t_start);
 
@@ -120,6 +115,13 @@ plush('...complete.\n\n');
 
 % get the recommendation matrix
 recom_matrix = X * Theta';
+
+% plot the cost by iteration
+indexes = [1:iterations];
+plot(indexes, costJ ./ costJ(1));
+title("Error Per Iteration");
+xlabel("Iteration #");
+ylabel("Cost J");
 
 % use SVD to reduce the dimensionality of the matrix
 plush('Dimensionality reduction with SVD...\n');
@@ -141,26 +143,10 @@ for i = 1 : 10 % length(pred)
     fprintf('\t%.1f for %s\n', pred(j), map_id_name{j});
 end
 
-% get test error for each user
-plush('\nGenerating error: ');
-correct = 0;
-total = 0;
-thresh = 1;
-recom_matrix = bsxfun(@plus, recom_matrix, Y_mean);
-
-for i = 1 : size(Y,1)
-    for j = 1 : size(Y,2)
-        % only consider case where the user rated the movie
-        if (Y(i,j) != 0)
-           if (abs(Y(i,j) - recom_matrix(i,j)) < thresh)
-              correct = correct + 1;
-           end
-           total = total + 1;
-        end
-    end
-end
-
-err = (1 - (correct / total)) * 100;
-printf("%f%%\n", err);
+% get root-mean-squared-deviation error in comparison
+plush('\nGenerating RMSD error: ');
+rmse = sqrt(sum((Y(:) .- recom_matrix(:)).^2) / size(Y(:),1));
+printf("%f%%\n", rmse);
+printf("Netflix 2006 RMSD error: 0.9525%%\n");
 
 plush('\n');
