@@ -18,7 +18,7 @@ function [recom_svd, Y_svd] = svdReduce(recom_matrix, Y_mean)
 %%%%% - whichever rows you eliminate from recom_matrix you MUST also remove from
 %%%%% - Y_mean since later we row-wise add the these matrices.
 %%%%% - More Notes:
-%%%%% - Going based on this: http://infolab.stanford.edu/~ullman/mmds/ch11.pdf
+%%%%% - Going based on this: http://www.cs.otago.ac.nz/cosc453/student_tutorials/principal_components.pdf
 
 recom_svd = recom_matrix;
 Y_svd = Y_mean;
@@ -40,10 +40,18 @@ cov_mat = (rm_norm' * rm_norm) / m;
 %% svd of covariance matrix
 [U, S, V] = svd(cov_mat);
 
+%% Calculate k (90% of dimensions)
+k = uint32(size(U, 1) * 0.90);
+
 %% Take 90% of the dimensions
-new_U = U(:, 1:uint32(size(U, 1) * 0.90));
+new_U = U(:, 1:k);
 
 %% Apply reduction:
 recom_matrix = recom_matrix * new_U;
+
+%% Undo mean normalization:
+for i = 1:k
+    recom_matrix(:, i) = (recom_matrix(:, i) * rm_std(i)) + rm_mean(i);
+endfor
 
 end
