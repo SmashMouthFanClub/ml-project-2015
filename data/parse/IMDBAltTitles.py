@@ -2,7 +2,7 @@ import re
 import progbar
 from util import *
 
-def parseIMDBAltTitles(movieID, files):
+def parseIMDBAltTitles(movieID, out, files):
   lines = batchOpen(files, encoding = 'iso-8859-1')
   #totalLines = lineCount(files)
   lineNum = 0
@@ -27,7 +27,7 @@ def parseIMDBAltTitles(movieID, files):
         continue
     elif isMovie(line):
       cleanTitle = scrub(line)
-      print(cleanTitle)
+      out[cleanTitle] = lineNum
       if cleanTitle in movieID:
         matched += 1
         currTitleID = movieID[cleanTitle]

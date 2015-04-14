@@ -6,7 +6,7 @@ import unicodedata as ud
 
 fileCountTotal = re.compile('.* (\d+).*', re.M | re.S)
 unicodeDel = re.compile('(?:[\.\'\"\?\!]|[^\x00-\x7f])+')
-unicodeSub = re.compile('(?:[-\/\\ \:\(\)\[\]\{\}])+')
+unicodeSub = re.compile('(?:[\s\-\/\\ \:\(\)\[\]\{\}])+')
 
 # filters out all of the above, aside from TV shows
 notMovies = re.compile('^.*\(.*\).*(?:\(.*\)|\{.*\})$')
@@ -45,6 +45,7 @@ def scrub(inputStr):
   text = removeAccents(text)
   text = substituteCharacters(text)
   text = removeCharacters(text)
+  text = text.strip('-')
 
   return text
 
