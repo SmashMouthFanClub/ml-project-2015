@@ -7,13 +7,15 @@ import unicodedata as ud
 
 fileCountTotal = re.compile('.* (\d+).*', re.M | re.S)
 
-unicodeDel = re.compile('(?:[\.\'\"\?\!]|[^\x00-\x7f])+')
+unicodeDel = re.compile('(?:[,.\'"?!]|[^\x00-\x7f])+')
 
-unicodeSub = re.compile('(?:[\s\-\/\\ \:\(\)\[\]\{\}])+')
+unicodeSub = re.compile('(?:[\s\-/\ :()[\]{}])+')
 
 andSub = re.compile('\&')
 
-endingDel = re.compile('(\-(?:\w+))')
+isNumber = re.compile('\d+')
+
+endingDel = re.compile('\-(?:v|vg|tv|i|ii|iii|iv)[^-\d\w]*')
 
 # filters out all of the above, aside from TV shows
 notMovies = re.compile('^.*\(.*\).*(?:\(.*\)|\{.*\})$')
@@ -51,7 +53,16 @@ def scrub(inputStr):
   def replaceAnd(inputStr):
     return andSub.sub('and', inputStr)
   def removeEndingTag(inputStr):
-    return endingDel.sub('', inputStr)
+    a = inputStr.split('-')
+    gen = (x[0] for x in enumerate(reversed(a)) if x[1].isdigit())
+    try:
+      idx = next(gen)
+    except:
+      return inputStr
+    a = a[0:-1 * idx]
+    a[-1] = a[-1][0:-1] + '0'
+    return '-'.join(a)
+  #  return endingDel.sub('', inputStr)
 
   text = inputStr.lower() 
   text = removeAccents(text)

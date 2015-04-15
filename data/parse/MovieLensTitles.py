@@ -6,7 +6,7 @@ movieLensTitle = re.compile('^(\d+)::(.*?) \(.*?(\d+)\)::.*$')
 
 lensArticleRegex = re.compile('^(.*?), ?(The|A|An|Los|Les|La|Le|El|L\')$')
 
-def parseMovieLensTitles(movieID, mismatch, files):
+def parseMovieLensTitles(movieID, lensID, files):
   lines = batchOpen(files)
 
   totalLines = lineCount(files)
@@ -28,9 +28,16 @@ def parseMovieLensTitles(movieID, mismatch, files):
     title = scrub(fixArticle(match.group(2)) + ' (' + match.group(3) + ')')
     
     if title in movieID:
+      idxIMDB = list(set(movieID[title]))
+      if len(idxIMDB) != 1:
+        idxIMDB = dict(enumerate(idxIMDB))
+        print(idxIMDB)
+      else:
+        1
+        #lensID[idx] = idxIMDB[0]
       matched += 1
     else:
-      mismatch.append(title)
+      lensID.append(title)
       missed += 1
 
   return {

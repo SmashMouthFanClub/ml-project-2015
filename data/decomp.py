@@ -62,7 +62,7 @@ movieTags = []
 tagID = {}
 tagCount = []
 
-mismatch = []
+lensID = []
 
 if __name__ == '__main__':
 
@@ -79,8 +79,8 @@ if __name__ == '__main__':
   stats = parseIMDBAltTitles(movieID, altFiles)
   print(stats)
 
-  stats = parseMovieLensTitles(movieID, mismatch, lensFiles)
+  stats = parseMovieLensTitles(movieID, lensID, lensFiles)
   print(stats)
 
   prettyPrint(movieID, 'movieID.json')
-  prettyPrint(mismatch, 'mismatch.json')
+  prettyPrint(lensID, 'mismatch.json')
