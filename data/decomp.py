@@ -1,9 +1,9 @@
 from parse.IMDBAltTitles import parseIMDBAltTitles
 from parse.IMDBGenres import parseIMDBGenres
 from parse.IMDBKeywords import parseIMDBKeywords
+from parse.MovieLensTitles import parseMovieLensTitles
 from operator import itemgetter
-
-import json
+from util import *
 
 movieFiles = [
   'raw/movies.list.0',
@@ -55,13 +55,16 @@ lensArticleRegex = re.compile('^(.*?), ?(The|A|An|Los|Les|La|Le|El|L\')$')
 def processMovieLensRatings():
   1
 
-if __name__ == '__main__':
-  movieID = {}
-  movieTitle = []
-  movieTags = []
+movieID = {}
+movieTitle = []
+movieTags = []
 
-  tagID = {}
-  tagCount = []
+tagID = {}
+tagCount = []
+
+mismatch = []
+
+if __name__ == '__main__':
 
   stats = parseIMDBKeywords(movieID, movieTitle, movieTags, tagID, tagCount, tagFiles)
   print(stats)
@@ -75,3 +78,9 @@ if __name__ == '__main__':
 
   stats = parseIMDBAltTitles(movieID, altFiles)
   print(stats)
+
+  stats = parseMovieLensTitles(movieID, mismatch, lensFiles)
+  print(stats)
+
+  prettyPrint(movieID, 'movieID.json')
+  prettyPrint(mismatch, 'mismatch.json')

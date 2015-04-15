@@ -1,18 +1,26 @@
 import codecs
 import itertools
+import json
 import re
 import subprocess
 import unicodedata as ud
 
 fileCountTotal = re.compile('.* (\d+).*', re.M | re.S)
+
 unicodeDel = re.compile('(?:[\.\'\"\?\!]|[^\x00-\x7f])+')
+
 unicodeSub = re.compile('(?:[\s\-\/\\ \:\(\)\[\]\{\}])+')
+
+andSub = re.compile('\&')
+
+endingDel = re.compile('(\-(?:\w+))')
 
 # filters out all of the above, aside from TV shows
 notMovies = re.compile('^.*\(.*\).*(?:\(.*\)|\{.*\})$')
 
 # filters out TV shows, video games, adult film, etc...
-notMoviesA = re.compile('^(?:\".*|.*\(.*\).*(?:\(.*\)|\{.*\}))$')
+#notMoviesA = re.compile('^(?:\".*|.*\(.*\).*(?:\(.*\)|\{.*\}))$')
+notMoviesA = re.compile('^(?:\".*|.*\(.*\).*(?:\{.*\}))$')
 
 def batchOpen(files, encoding=None):
   if encoding == None:
@@ -40,11 +48,17 @@ def scrub(inputStr):
     return unicodeSub.sub('-', inputStr)
   def removeCharacters(inputStr):
     return unicodeDel.sub('', inputStr)
+  def replaceAnd(inputStr):
+    return andSub.sub('and', inputStr)
+  def removeEndingTag(inputStr):
+    return endingDel.sub('', inputStr)
 
   text = inputStr.lower() 
   text = removeAccents(text)
   text = substituteCharacters(text)
   text = removeCharacters(text)
+  text = replaceAnd(text)
+  text = removeEndingTag(text)
   text = text.strip('-')
 
   return text
@@ -52,3 +66,7 @@ def scrub(inputStr):
 def isMovie(title):
   match = notMoviesA.match(title)
   return match == None
+
+def prettyPrint(obj, filename):
+  f = open(filename, 'w')
+  f.write(json.dumps(obj, sort_keys=True, indent=4, separators=(',', ': ')))
