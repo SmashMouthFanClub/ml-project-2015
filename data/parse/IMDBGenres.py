@@ -56,7 +56,7 @@ def parseIMDBGenres(movieID, movieTitle, movieTags, tagID, tagCount, files):
     cleanTitle = scrub(title)
     if cleanTitle in movieID:
       added += 1
-      idx = movieID[cleanTitle]
+      idx = movieID[cleanTitle][0]
       movieTags[idx].append(genre)
     else:
       skipped += 1

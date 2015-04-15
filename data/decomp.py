@@ -73,12 +73,5 @@ if __name__ == '__main__':
   #for idx, tag in enumerate(tagCount):
   #  tagID[tag[0]] = idx
 
-  out = {}
-  stats = parseIMDBAltTitles(movieID, out, altFiles)
+  stats = parseIMDBAltTitles(movieID, altFiles)
   print(stats)
-
-  f = open('movieID', 'w')
-  f.write(json.dumps(movieID, sort_keys=True, indent=4, separators=(',', ': ')))
-
-  g = open('akaTitles', 'w')
-  g.write(json.dumps(out, sort_keys=True, indent=4, separators=(',', ': ')))
