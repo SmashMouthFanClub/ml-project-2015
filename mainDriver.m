@@ -29,6 +29,9 @@ plush('Matching movie IDs to titles...\n');
 map_id_name = loadMovieIDNameMap(f_movie_titles);
 plush('...complete.\n\n');
 
+clear f_movie_matrix;
+clear f_movie_titles;
+
 % add a new user's ratings to the system
 new_ratings = zeros(size(Y, 1), 1);
 new_ratings(1)   = 4;
@@ -84,10 +87,7 @@ X = randn(num_movies, num_features);
 Theta = randn(num_users, num_features);
 
 % fold the parameters into a single row vector
-initial_params = [X(:); Theta(:)];
-
-%%%%% TODO - test lambda and iteration and num_features values
-%%%%%      - once we get new data in to find best performance
+params = [X(:); Theta(:)];
 
 %%%%% TODO - why does training on Y_norm and adding back Y_mean
 %%%%%      - only recommend the best rated movies?
@@ -101,52 +101,75 @@ initial_params = [X(:); Theta(:)];
 %%%%% TODO - report stats on training on Y vs Y_norm
 t_start = time();  %%%%% TODO - try fminunc with TolFun
 options = optimset('GradObj', 'on', 'MaxIter', iterations);
-[thetafold, costJ] = fmincg (@(t)(collabFilter(t, Y_norm, R, num_users, ...
+[params, costJ] = fmincg (@(t)(collabFilter(t, Y_norm, R, num_users, ...
                                   num_movies, num_features, lambda)), ...
-                     initial_params, options);
-fprintf('Training took %d seconds.\n', time() - t_start);
+                          params, options);
+t_end = time();
+t_total = t_end - t_start;
+fprintf('Training took %d seconds.\n', t_total);
+
+clear R;
+clear Y_norm;
 
 % unfold the returned values
-X = reshape(thetafold(1:num_movies*num_features), num_movies, num_features);
-Theta = reshape(thetafold(num_movies*num_features+1:end), ...
+X = reshape(params(1:num_movies * num_features), num_movies, num_features);
+Theta = reshape(params(num_movies * num_features + 1:end), ...
                 num_users, num_features);
-
 plush('...complete.\n\n');
+clear params;
 
 % get the recommendation matrix
 recom_matrix = X * Theta';
 
-% plot the cost by iteration
-indexes = [1:iterations];
-plot(indexes, costJ ./ costJ(1));
-title("Error Per Iteration");
-xlabel("Iteration #");
-ylabel("Cost J");
+clear X;
+clear Theta;
 
+%%%% TODO - we're doing SVD wrong right now
 % use SVD to reduce the dimensionality of the matrix
-plush('Dimensionality reduction with SVD...\n');
-[recom_matrix, Y_mean] = svdReduce(recom_matrix, Y_mean);
-plush('...complete.\n\n');
+%plush('Dimensionality reduction with SVD...\n');
+%[recom_matrix, Y_mean] = svdReduce(recom_matrix, Y_mean);
+%plush('...complete.\n\n');
+
+%%%% TODO - for the sake of saving space (at sacrifice of computation time)
+%%%%      - we can remove: pred,  initial_params (for thetafold), Y_norm
+%%%%      - (just update Y instead) ... clear individual ones as we don't
+%%%%      - need them too
 
 % make a prediction for the user
 pred = recom_matrix(:,1) + Y_mean;
 
-% sort the vector to get the highest rating movies first
-[x, ix] = sort(pred, 'descend');
+clear Y_mean;
 
-%%%%% TODO - threshold to 0 the movies the user already watched
+% sort the vector to get the highest rating movies first
+[pred, ix] = sort(pred, 'descend');
 
 % print top 10 recommendations
 plush('Our top 10 recommendations for you:\n');
-for i = 1 : 10 % length(pred)
+for i = 1 : 10
     j = ix(i);
+    % skip movies that the user already watched
+    if (new_ratings(j) > 0)
+       i = i - 1;
+       continue;
+    end
     fprintf('\t%.1f for %s\n', pred(j), map_id_name{j});
 end
 
+clear map_id_name;
+clear new_ratings;
+
 % get root-mean-squared-deviation error in comparison
 plush('\nGenerating RMSD error: ');
-rmse = sqrt(sum((Y(:) .- recom_matrix(:)).^2) / size(Y(:),1));
+rmse = rootMeanSqErr(Y, recom_matrix);
 printf("%f%%\n", rmse);
 printf("Netflix 2006 RMSD error: 0.9525%%\n");
-
 plush('\n');
+
+% plot the cost by iterations using the plotCost function
+info.iterations = iterations;
+info.costJ = costJ;
+info.num_features = num_features;
+info.lambda = lambda;
+info.rmse = rmse;
+info.t_total = t_total;
+plotCost(info);
