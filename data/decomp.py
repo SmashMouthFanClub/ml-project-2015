@@ -85,4 +85,4 @@ if __name__ == '__main__':
   print(stats)
 
   #prettyPrint(movieID, 'movieID.json')
-  #prettyPrint(lensID, 'mismatch.json')
+  prettyPrint(lensID, 'mismatch.json')

@@ -29,8 +29,8 @@ def parseMovieLensTitles(movieID, movieTitle, lensID, files, matchFile):
       continue
     
     idx = int(match.group(1))
-    dirtyTitle = match.group(2) + ' (' + match.group(3) + ')'
-    cleanTitle = scrub(fixArticle(dirtyTitle))
+    dirtyTitle = fixArticle(match.group(2)) + ' (' + match.group(3) + ')'
+    cleanTitle = scrub(dirtyTitle)
     
     if cleanTitle in movieID:
       idxIMDB = list(set(movieID[cleanTitle]))
@@ -42,11 +42,10 @@ def parseMovieLensTitles(movieID, movieTitle, lensID, files, matchFile):
           idxIMDB = idxIMDB[x.index(dirtyTitle)]
         else:
           idxIMDB = chooseTitle(movieTitle, idxIMDB, dirtyTitle)
-        cachedMatches[dirtyTitle] = idxIMDB
+        cachedMatches[dirtyTitle] = movieTitle[idxIMDB]
       else:
         idxIMDB = idxIMDB[0]
 
-      #lensID[idx] = idxIMDB[0]
       matched += 1
     else:
       lensID.append(cleanTitle)
