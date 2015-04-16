@@ -7,10 +7,9 @@
 % movie recommendations for a given user.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%%%%% TODO - Divide the data into training/CV/test and perform
-%%%%%      - appropriate cross-validation and tests, reporting stats for
-%%%%%      - how well our predictions perform.
 clc; close all; clear;
+
+use_test = 1;
 
 % data matrix and movie title file locations
 f_movie_matrix = 'data/movies.mat';
@@ -55,6 +54,25 @@ for i = 1 : length(new_ratings)
 end
 plush('\n');
 
+% generate a test set - ratings are removed from 1:num_test_users
+% in the Y matrix, and Y_test contains the original ratings for
+% num_test_users users
+if (use_test > 0)
+    plush('Generating test set...\n');
+
+    percent_in_test_set    = .2;
+    percent_ratings_remove = .5;
+    fprintf('\tPercent data in test set:  %d%%\n', ...
+            percent_in_test_set * 100);
+    fprintf('\tPercent ratings extracted: %d%%\n', ...
+            percent_ratings_remove * 100);
+    plush('');
+
+    [Y, Y_test] = genTestSet(Y, percent_in_test_set, percent_ratings_remove);
+    num_test_users = size(Y_test, 2);
+    plush('...complete.\n\n');
+end
+
 % use collaborative filtering to train the model on the movie rating data
 plush('Using fmincg to train collaborative filtering model...\n');
 
@@ -70,8 +88,8 @@ R = (Y > 0);
 % initialize the number of features to use, regularization parameter,
 % and number of iterations to train with
 num_features = 30;
-lambda = 10;
-iterations = 100;
+lambda       = 10;
+iterations   = 40;
 
 printf('\tFeature count: %d\n', num_features);
 printf('\tLambda:        %d\n', lambda);
@@ -124,7 +142,8 @@ recom_matrix = X * Theta';
 clear X;
 clear Theta;
 
-%%%% TODO - we're doing SVD wrong right now
+%%%% TODO - we're doing SVD wrong right now - we need to apply
+%%%%      - it before learning then do recovery after
 % use SVD to reduce the dimensionality of the matrix
 %plush('Dimensionality reduction with SVD...\n');
 %[recom_matrix, Y_mean] = svdReduce(recom_matrix, Y_mean);
@@ -141,7 +160,7 @@ pred = recom_matrix(:,1) + Y_mean;
 clear Y_mean;
 
 % sort the vector to get the highest rating movies first
-[pred, ix] = sort(pred, 'descend');
+[NaN, ix] = sort(pred, 'descend');
 
 % print top 10 recommendations
 plush('Our top 10 recommendations for you:\n');
@@ -159,10 +178,19 @@ clear map_id_name;
 clear new_ratings;
 
 % get root-mean-squared-deviation error in comparison
-plush('\nGenerating RMSD error: ');
-rmse = rootMeanSqErr(Y, recom_matrix);
-printf("%f%%\n", rmse);
-printf("Netflix 2006 RMSD error: 0.9525%%\n");
+if (use_test > 0)
+    plush('\nGenerating RMSD training error: ');
+    rmse = rootMeanSqErr(Y, recom_matrix);
+    printf("%.4f%%", rmse);
+    plush('\nGenerating RMSD test error:     ');
+    rmse = rootMeanSqErr(Y_test, recom_matrix(:, 1:num_test_users));
+    printf("%.4f%%\n", rmse);
+else
+    plush('\nGenerating RMSD error:          ');
+    rmse = rootMeanSqErr(Y, recom_matrix);
+    printf("%.4f%%\n", rmse);
+end
+printf("Netflix 2006 RMSD error:        0.9525%%\n");
 plush('\n');
 
 % plot the cost by iterations using the plotCost function
