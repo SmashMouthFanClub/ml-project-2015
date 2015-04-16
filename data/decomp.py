@@ -41,6 +41,8 @@ ratingFiles = [
   'raw/ratings.dat.5'
 ]
 
+lensMatchFile = 'lensMatches.json'
+
 '''
 line4Regex = re.compile('^(4)\:')
 line5Regex = re.compile('^(5)\:')
@@ -79,8 +81,8 @@ if __name__ == '__main__':
   stats = parseIMDBAltTitles(movieID, altFiles)
   print(stats)
 
-  stats = parseMovieLensTitles(movieID, lensID, lensFiles)
+  stats = parseMovieLensTitles(movieID, movieTitle, lensID, lensFiles, lensMatchFile)
   print(stats)
 
-  prettyPrint(movieID, 'movieID.json')
-  prettyPrint(lensID, 'mismatch.json')
+  #prettyPrint(movieID, 'movieID.json')
+  #prettyPrint(lensID, 'mismatch.json')

@@ -1,13 +1,17 @@
-import re
+import json
 import progbar
+import re
 from util import *
 
 movieLensTitle = re.compile('^(\d+)::(.*?) \(.*?(\d+)\)::.*$')
 
 lensArticleRegex = re.compile('^(.*?), ?(The|A|An|Los|Les|La|Le|El|L\')$')
 
-def parseMovieLensTitles(movieID, lensID, files):
+def parseMovieLensTitles(movieID, movieTitle, lensID, files, matchFile):
   lines = batchOpen(files)
+  fMatch = open(matchFile, 'r')
+  cachedMatches = json.load(fMatch)
+  fMatch.close()
 
   totalLines = lineCount(files)
   lineNum = 0
@@ -25,20 +29,30 @@ def parseMovieLensTitles(movieID, lensID, files):
       continue
     
     idx = int(match.group(1))
-    title = scrub(fixArticle(match.group(2)) + ' (' + match.group(3) + ')')
+    dirtyTitle = match.group(2) + ' (' + match.group(3) + ')'
+    cleanTitle = scrub(fixArticle(dirtyTitle))
     
-    if title in movieID:
-      idxIMDB = list(set(movieID[title]))
-      if len(idxIMDB) != 1:
-        idxIMDB = dict(enumerate(idxIMDB))
-        print(idxIMDB)
+    if cleanTitle in movieID:
+      idxIMDB = list(set(movieID[cleanTitle]))
+      if len(idxIMDB) != 1 and dirtyTitle in cachedMatches:
+        idxIMDB = int(cachedMatches[dirtyTitle])
+      elif len(idxIMDB) != 1:
+        x = [movieTitle[i] for i in idxIMDB]
+        if dirtyTitle in x:
+          idxIMDB = idxIMDB[x.index(dirtyTitle)]
+        else:
+          idxIMDB = chooseTitle(movieTitle, idxIMDB, dirtyTitle)
+        cachedMatches[dirtyTitle] = idxIMDB
       else:
-        1
-        #lensID[idx] = idxIMDB[0]
+        idxIMDB = idxIMDB[0]
+
+      #lensID[idx] = idxIMDB[0]
       matched += 1
     else:
-      lensID.append(title)
+      lensID.append(cleanTitle)
       missed += 1
+
+  prettyPrint(cachedMatches, matchFile)
 
   return {
     'parseErr': parseErr,
@@ -52,3 +66,10 @@ def fixArticle(title):
     return title
   else:
     return match.group(2) + ' ' + match.group(1)
+
+def chooseTitle(movieTitle, choices, title):
+  print('Which is the correct matching for {}?'.format(title))
+  for idx, x in enumerate(choices):
+    print('\t{}:\t{}'.format(idx + 1, movieTitle[x]))
+  matchIdx = int(input())
+  return choices[(matchIdx - 1) % len(choices)]

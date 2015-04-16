@@ -52,9 +52,13 @@ def parseIMDBKeywords(movieID, movieTitle, movieTags, tagID, tagCount, files):
     if tag == None or not isMovie(title):
       continue
     cleanTitle = scrub(title)
-    if cleanTitle in movieID:
-      idx = movieID[cleanTitle][0]
+    if cleanTitle in movieID and title == movieTitle[-1]:
+      idx = movieID[cleanTitle][-1]
       movieTags[idx].append(tag)
+    elif cleanTitle in movieID and title != movieTitle[-1]:
+      movieID[cleanTitle].append(len(movieTags))
+      movieTags.append([tag])
+      movieTitle.append(title)
     else:
       movieID[cleanTitle] = [len(movieTags)]
       movieTags.append([tag])
