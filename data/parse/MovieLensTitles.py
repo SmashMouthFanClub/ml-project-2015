@@ -35,7 +35,10 @@ def parseMovieLensTitles(movieID, movieTitle, lensID, files, matchFile):
     if cleanTitle in movieID:
       idxIMDB = list(set(movieID[cleanTitle]))
       if len(idxIMDB) != 1 and dirtyTitle in cachedMatches:
-        idxIMDB = int(cachedMatches[dirtyTitle])
+        if str(cachedMatches[dirtyTitle]).isdigit():
+          idxOld = cachedMatches[dirtyTitle]
+          cachedMatches[dirtyTitle] = movieTitle[idxOld]
+        idxIMDB = cachedMatches[dirtyTitle]
       elif len(idxIMDB) != 1:
         x = [movieTitle[i] for i in idxIMDB]
         if dirtyTitle in x:
