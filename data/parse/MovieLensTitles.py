@@ -9,6 +9,10 @@ lensArticleRegex = re.compile('^(.*?), ?(The|A|An|Los|Les|La|Le|El|L\')$')
 
 def parseMovieLensTitles(movieID, movieTitle, lensID, files, matchFile):
   lines = batchOpen(files)
+  totalLines = lineCount(files)
+  lineNum = 0
+  progBar = progbar.ProgressBar(totalLines)
+
   fMatch = open(matchFile, 'r')
   cachedMatches = json.load(fMatch)
   fMatch.close()
@@ -22,6 +26,10 @@ def parseMovieLensTitles(movieID, movieTitle, lensID, files, matchFile):
   matched = 0
 
   for line in lines:
+    lineNum += 1
+    if lineNum % 1000:
+      progBar.update(lineNum)
+
     match = movieLensTitle.match(line)
     if match == None:
       print(line)
@@ -38,7 +46,8 @@ def parseMovieLensTitles(movieID, movieTitle, lensID, files, matchFile):
         if str(cachedMatches[dirtyTitle]).isdigit():
           idxOld = cachedMatches[dirtyTitle]
           cachedMatches[dirtyTitle] = movieTitle[idxOld]
-        idxIMDB = cachedMatches[dirtyTitle]
+        x = [movieTitle[i] for i in movieID[cleanTitle]]
+        idxIMDB = movieID[cleanTitle][x.index(cachedMatches[dirtyTitle])]
       elif len(idxIMDB) != 1:
         x = [movieTitle[i] for i in idxIMDB]
         if dirtyTitle in x:
@@ -48,10 +57,9 @@ def parseMovieLensTitles(movieID, movieTitle, lensID, files, matchFile):
         cachedMatches[dirtyTitle] = movieTitle[idxIMDB]
       else:
         idxIMDB = idxIMDB[0]
-
+      lensID[idx] = idxIMDB
       matched += 1
     else:
-      lensID.append(cleanTitle)
       missed += 1
 
   prettyPrint(cachedMatches, matchFile)

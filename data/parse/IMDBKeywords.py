@@ -6,7 +6,8 @@ from util import *
 sectionRegex = re.compile('^(\d)\:')
 
 # splits a tag and its count in the tag summary section
-tagCountRegex = re.compile('(.+) \((\d+)')
+#tagCountRegex = re.compile('(.+) \((\d+)')
+tagCountRegex = re.compile('(.+) \((\d+)\)')
 
 def parseIMDBKeywords(movieID, movieTitle, movieTags, tagID, tagCount, files):
   lines = batchOpen(files, encoding = 'iso-8859-1')
@@ -72,8 +73,19 @@ def parseIMDBKeywords(movieID, movieTitle, movieTags, tagID, tagCount, files):
   return stats
 
 def getTagCounts(line):
+
+  '''
   outTags = []
   tags = line.split(')')
+  for tag in tags:
+    match = tagCountRegex.match(tag.strip())
+    if match != None:
+      outTags.append((match.group(1), int(match.group(2))))
+  return outTags
+  '''
+
+  outTags = []
+  tags = line.strip().split('\t')
   for tag in tags:
     match = tagCountRegex.match(tag.strip())
     if match != None:
