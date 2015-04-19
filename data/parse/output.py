@@ -20,5 +20,12 @@ def outputTags(tagID, tagCount, out):
     line = '{}::{}::{}'.format(idx, tag[0], tag[1])
     print(line, file = f)
 
-def outputUsers(out):
+def outputUsers(userRatings, out):
   f = open(out, 'w')
+
+  for idx, user in enumerate(userRatings):
+    a = [list(x) for x in zip(*user)]
+    movies = ','.join([str(x) for x in a[0]])
+    ratings = ','.join([str(x) for x in a[1]])
+    line = '{}::{}::{}'.format(idx, movies, ratings)
+    print(line, file = f)

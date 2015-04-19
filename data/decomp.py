@@ -96,7 +96,7 @@ if __name__ == '__main__':
 
   outputMovies(movieTitle, movieTags, tagID, movieOutput)
   outputTags(tagID, tagCount, tagOutput)
-  outputUsers(userOutput)
+  outputUsers(userRatings, userOutput)
 
   #prettyPrint(movieID, 'movieID.json')
   #prettyPrint(lensID, 'mismatch.json')
