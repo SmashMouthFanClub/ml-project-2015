@@ -23,18 +23,17 @@ function [recom_svd, Y_svd] = svdReduce(recom_matrix, Y_mean)
 recom_svd = recom_matrix;
 Y_svd = Y_mean;
 
-m = size(recom_matrix, 2);
+m = size(recom_matrix, 1);
 
 %% mean normalization
 rm_mean = mean(recom_matrix);
 rm_std = std(recom_matrix);
 rm_norm = recom_matrix;
 
-for i = 1:m
-    rm_norm(:, i) = (recom_matrix(:, i) - rm_mean(i)) / rm_std(i);
-endfor
+rm_norm = bsxfun(@minus, recom_matrix, rm_mean);
+rm_norm = bsxfun(@rdivide, rm_norm, rm_std);
 
-%% using cov to calculate covariance matrix
+%% calculate covariance matrix
 cov_mat = (rm_norm' * rm_norm) / m;
 
 %% svd of covariance matrix
@@ -53,5 +52,7 @@ recom_matrix = recom_matrix * new_U;
 for i = 1:k
     recom_matrix(:, i) = (recom_matrix(:, i) * rm_std(i)) + rm_mean(i);
 endfor
+
+recom_svd = recom_matrix;
 
 end
