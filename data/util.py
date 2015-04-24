@@ -81,3 +81,8 @@ def isMovie(title):
 def prettyPrint(obj, filename):
   f = open(filename, 'w')
   f.write(json.dumps(obj, sort_keys=True, indent=4, separators=(',', ': ')))
+
+def reIndex(lst, indexMapping):
+  for idx, elem in enumerate(lst):
+    indexMapping[elem['id']] = idx
+    elem['id'] = idx
