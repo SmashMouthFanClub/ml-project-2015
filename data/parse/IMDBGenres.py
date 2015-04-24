@@ -6,7 +6,7 @@ from util import *
 sectionNumber = re.compile('^(\d)\:')
 
 # splits a tag and its count in the tag summary section
-genreCount = re.compile('(.+?) +(\d+)')
+genreCount = re.compile('(.+?) +(\d+)$')
 
 def parseIMDBGenres(movieID, movieTitle, movieTags, tagID, tagCount, files):
   lines = batchOpen(files, encoding = 'iso-8859-1')
@@ -76,11 +76,11 @@ def getGenreCount(line):
   if match == None:
     return []
   else:
-    return [(match.group(1).lower(), int(match.group(2)))]
+    return [(match.group(1).lower().strip(), int(match.group(2)))]
 
 def getMovieGenre(line):
   movieTag = [x.strip() for x in line.split('\t') if x.strip() != '']
   if len(movieTag) != 2:
     return (None, None)
   else:
-    return(movieTag[0], movieTag[1])
+    return(movieTag[0], movieTag[1].lower())
