@@ -72,8 +72,12 @@ def filterMoviesByRatings(movies, users):
     'numMovies': len(ratedMovies)
   }
 
-def outputMoviesMatrix(users, numMovies, fileName):
+def outputMoviesMatrix(users, numMovies, numUsers, fileName):
   f = open(fileName, 'w')
+  print('# name: Y', file = f)
+  print('# type: matrix', file = f)
+  print('# rows: {}'.format(numUsers), file = f)
+  print('# columns: {}'.format(numMovies), file = f)
   for user in users:
     ratingList = ['0'] * numMovies
     for idx, rating in user['ratings']:
@@ -109,5 +113,5 @@ if __name__ == '__main__':
     loadMovies(movies, inMovies)
     loadUsers(users, inUsers)
     stats = filterMoviesByRatings(movies, users)
-    outputMoviesMatrix(users, stats['numMovies'], 'test.mat')
+    outputMoviesMatrix(users, stats['numMovies'], stats['numUsers'], 'test.mat')
     outputMoviesLookup(movies, 'test.lookup')
