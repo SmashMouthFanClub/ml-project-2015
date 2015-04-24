@@ -2,6 +2,8 @@ from parse.IMDBAltTitles import parseIMDBAltTitles
 from parse.IMDBGenres import parseIMDBGenres
 from parse.IMDBKeywords import parseIMDBKeywords
 from parse.MovieLensTitles import parseMovieLensTitles
+from parse.MovieLensRatings import parseMovieLensRatings
+from parse.output import outputMovies, outputTags, outputUsers
 from operator import itemgetter
 from util import *
 
@@ -41,6 +43,12 @@ ratingFiles = [
   'raw/ratings.dat.5'
 ]
 
+lensMatchFile = 'lensMatches.json'
+
+movieOutput = 'tmp/movies.txt'
+tagOutput = 'tmp/tags.txt'
+userOutput = 'tmp/users.txt'
+
 '''
 line4Regex = re.compile('^(4)\:')
 line5Regex = re.compile('^(5)\:')
@@ -62,25 +70,33 @@ movieTags = []
 tagID = {}
 tagCount = []
 
-mismatch = []
+lensID = {}
+
+userRatings = []
 
 if __name__ == '__main__':
-
   stats = parseIMDBKeywords(movieID, movieTitle, movieTags, tagID, tagCount, tagFiles)
   print(stats)
 
-  #stats = parseIMDBGenres(movieID, movieTitle, movieTags, tagID, tagCount, genreFiles)
-  #print(stats)
+  stats = parseIMDBGenres(movieID, movieTitle, movieTags, tagID, tagCount, genreFiles)
+  print(stats)
 
-  #tagCount[:] = reversed(sorted(tagCount, key = itemgetter(1)))
-  #for idx, tag in enumerate(tagCount):
-  #  tagID[tag[0]] = idx
+  tagCount[:] = reversed(sorted(tagCount, key = itemgetter(1)))
+  for idx, tag in enumerate(tagCount):
+    tagID[tag[0]] = idx
 
   stats = parseIMDBAltTitles(movieID, altFiles)
   print(stats)
 
-  stats = parseMovieLensTitles(movieID, mismatch, lensFiles)
+  stats = parseMovieLensTitles(movieID, movieTitle, lensID, lensFiles, lensMatchFile)
   print(stats)
 
-  prettyPrint(movieID, 'movieID.json')
-  prettyPrint(mismatch, 'mismatch.json')
+  stats = parseMovieLensRatings(lensID, userRatings, ratingFiles)
+  print(stats)
+
+  outputMovies(movieTitle, movieTags, tagID, movieOutput)
+  outputTags(tagID, tagCount, tagOutput)
+  outputUsers(userRatings, userOutput)
+
+  #prettyPrint(movieID, 'movieID.json')
+  #prettyPrint(lensID, 'mismatch.json')
