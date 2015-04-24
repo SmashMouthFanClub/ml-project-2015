@@ -1,4 +1,5 @@
 __pycache__/
 parse/__pycache__/
+tmp/users.txt
 mismatch.json
 movieID.json
