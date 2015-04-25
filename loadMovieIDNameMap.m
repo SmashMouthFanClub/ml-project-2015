@@ -16,16 +16,16 @@ id_map = cell(1,1);
 i = 0;
 
 while(!feof(fid))
-	% increment index and read line
-	i = i + 1;
-    line = fgets(fid);
-	
-	%%%%% TODO - can get rid of this part once we have our own movie title data
-    % ignore any proceeding ID number by splitting on a space
-    [idx, movie_name] = strtok(line, ' ');
-	
-    % add the movie name to the array
-    id_map{i} = strtrim(movie_name);
+  % increment index and read line
+  i = i + 1;
+  line = fgets(fid);
+
+  %%%%% TODO - can get rid of this part once we have our own movie title data
+  % ignore any proceeding ID number by splitting on a space
+  %[idx, movie_name] = strtok(line, ' ');
+
+  % add the movie name to the array
+  id_map{i} = strtrim(line); % strtrim(movie_name);
 endwhile
 
 % close the file
