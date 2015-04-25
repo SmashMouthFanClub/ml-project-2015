@@ -7,20 +7,20 @@
 % movie recommendations for a given user.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-clc; close all; clear;
+clc; close all; %clear;
 
-use_test = 1;
+use_test = 0;
 
 % data matrix and movie title file locations
-f_movie_matrix = 'data/movies.mat';
-f_movie_titles = 'data/movie_titles.txt';
+% f_movie_matrix = 'data/movies.mat';
+f_movie_titles = 'data/test.lookup'; %'data/movie_titles.txt';
 
 % load in movie rating data
 plush('\nLoading movie rating data...\n');
 
 % this will load a matrix Y containing movie ratings where the rows
 % are movies and columns are users
-load(f_movie_matrix);
+%load(f_movie_matrix);
 plush('...complete.\n\n');
 
 % load in movie titles
@@ -32,27 +32,27 @@ clear f_movie_matrix;
 clear f_movie_titles;
 
 % add a new user's ratings to the system
-new_ratings = zeros(size(Y, 1), 1);
-new_ratings(1)   = 4;
-new_ratings(7)   = 3;
-new_ratings(12)  = 5;
-new_ratings(54)  = 4;
-new_ratings(64)  = 5;
-new_ratings(66)  = 3;
-new_ratings(69)  = 5;
-new_ratings(98)  = 2;
-new_ratings(183) = 4;
-new_ratings(226) = 5;
-new_ratings(355) = 5;
-
-plush('You rated:\n');
-for i = 1 : length(new_ratings)
-    if (new_ratings(i) > 0)
-        fprintf('\t%.1f for %s\n', ...
-                new_ratings(i), map_id_name{i});
-    end
-end
-plush('\n');
+%new_ratings = zeros(size(Y, 1), 1);
+%new_ratings(1)   = 4;
+%new_ratings(7)   = 3;
+%new_ratings(12)  = 5;
+%new_ratings(54)  = 4;
+%new_ratings(64)  = 5;
+%new_ratings(66)  = 3;
+%new_ratings(69)  = 5;
+%new_ratings(98)  = 2;
+%new_ratings(183) = 4;
+%new_ratings(226) = 5;
+%new_ratings(355) = 5;
+%
+%plush('You rated:\n');
+%for i = 1 : length(new_ratings)
+%    if (new_ratings(i) > 0)
+%        fprintf('\t%.1f for %s\n', ...
+%                new_ratings(i), map_id_name{i});
+%    end
+%end
+%plush('\n');
 
 % generate a test set - ratings are removed from 1:num_test_users
 % in the Y matrix, and Y_test contains the original ratings for
@@ -77,10 +77,10 @@ end
 plush('Using fmincg to train collaborative filtering model...\n');
 
 % add the new ratings to the data
-Y = [new_ratings Y];
+%Y = [new_ratings Y];
 
 % map R(i,j) to 1 if Y(i,j) is > 0, and 0 otherwise
-R = (Y > 0);
+R = logical(Y > 0);
 
 % perform mean normalization
 [Y_norm, Y_mean] = meanNormData(Y, R);
@@ -106,6 +106,8 @@ Theta = randn(num_users, num_features);
 
 % fold the parameters into a single row vector
 params = [X(:); Theta(:)];
+clear X;
+clear Theta;
 
 %%%%% TODO - why does training on Y_norm and adding back Y_mean
 %%%%%      - only recommend the best rated movies?
@@ -149,33 +151,27 @@ clear Theta;
 %[recom_matrix, Y_mean] = svdReduce(recom_matrix, Y_mean);
 %plush('...complete.\n\n');
 
-%%%% TODO - for the sake of saving space (at sacrifice of computation time)
-%%%%      - we can remove: pred,  initial_params (for thetafold), Y_norm
-%%%%      - (just update Y instead) ... clear individual ones as we don't
-%%%%      - need them too
-
 % make a prediction for the user
-pred = recom_matrix(:,1) + Y_mean;
-
-clear Y_mean;
+%pred = recom_matrix(:,1) + Y_mean;
+%clear Y_mean;
 
 % sort the vector to get the highest rating movies first
-[NaN, ix] = sort(pred, 'descend');
+%[NaN, ix] = sort(pred, 'descend');
 
 % print top 10 recommendations
-plush('Our top 10 recommendations for you:\n');
-for i = 1 : 10
-    j = ix(i);
-    % skip movies that the user already watched
-    if (new_ratings(j) > 0)
-       i = i - 1;
-       continue;
-    end
-    fprintf('\t%.1f for %s\n', pred(j), map_id_name{j});
-end
+%plush('Our top 10 recommendations for you:\n');
+%for i = 1 : 10
+%    j = ix(i);
+%    % skip movies that the user already watched
+%    if (new_ratings(j) > 0)
+%       i = i - 1;
+%       continue;
+%    end
+%    fprintf('\t%.1f for %s\n', pred(j), map_id_name{j});
+%end
 
 clear map_id_name;
-clear new_ratings;
+%clear new_ratings;
 
 % get root-mean-squared-deviation error in comparison
 if (use_test > 0)
