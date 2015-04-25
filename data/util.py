@@ -45,7 +45,7 @@ def lineCount(files):
 
 def scrub(inputStr):
   def removeAccents(inputStr):
-    return u''.join([c for c in ud.normalize('NFKD', inputStr) if not ud.combining(c)])
+    return unicode(''.join([c for c in ud.normalize('NFKD', inputStr) if not ud.combining(c)]))
   def substituteCharacters(inputStr):
     return unicodeSub.sub('-', inputStr)
   def removeCharacters(inputStr):
@@ -64,7 +64,7 @@ def scrub(inputStr):
     return '-'.join(a)
   #  return endingDel.sub('', inputStr)
 
-  text = inputStr.lower() 
+  text = inputStr.lower()
   text = removeAccents(text)
   text = substituteCharacters(text)
   text = removeCharacters(text)

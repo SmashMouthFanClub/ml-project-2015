@@ -9,6 +9,7 @@
 
 function rmse = rootMeanSqErr(Y, recom)
 
-rmse = sqrt(sum((Y(:) .- recom(:)).^2) / size(Y(:), 1));
+%%%% TODO: sum or size for Y?
+rmse = sqrt(sum((Y(:) .- recom(:)).^2) / sum(Y(:), 1));
 
 end
