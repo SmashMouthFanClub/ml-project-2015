@@ -76,11 +76,10 @@ def filterTagsByCount(movies, tags, users, minHits):
     'removedTagInstances': removedTagInstances
   }
 
-def filterTagsByRatings(movies, tags, users):
-  1
-
 def filterTaglessMovies(movies, tags, users):
-  1
+  movies[:] = [movie for movie in movies if len(movie['tags']) != 0]
+  movieMap = {}
+  reIndex(movies, movieMap)
 
 def filterMoviesByRatings(movies, users):
   ratedMovies = set()
@@ -100,14 +99,26 @@ def filterMoviesByRatings(movies, users):
     'numMovies': len(ratedMovies)
   }
 
-def outputMoviesMatrix(users, numMovies, numUsers, fileName):
+def outputMovieTagsMatrix(movies, numRows, numCols, fileName):
+  f = open(fileName, 'w')
+  print('# name: Z', file = f)
+  print('# type: matrix', file = f)
+  print('# rows: {}'.format(numRows), file = f)
+  print('# columns: {}'.format(numCols), file = f)
+  for movie in movies:
+    tagList = ['0'] * numCols
+    for idx in movie['tags']:
+      tagList[idx] = '1'
+    print(' '.join(tagList), file = f)
+
+def outputRatingsMatrix(users, numRows, numCols, fileName):
   f = open(fileName, 'w')
   print('# name: Y', file = f)
   print('# type: matrix', file = f)
-  print('# rows: {}'.format(numUsers), file = f)
-  print('# columns: {}'.format(numMovies), file = f)
+  print('# rows: {}'.format(numRows), file = f)
+  print('# columns: {}'.format(numCols), file = f)
   for user in users:
-    ratingList = ['0'] * numMovies
+    ratingList = ['0'] * numCols
     for idx, rating in user['ratings']:
       ratingList[idx] = str(rating)
     print(' '.join(ratingList), file = f)
@@ -133,24 +144,15 @@ if __name__ == '__main__':
     loadMovies(movies, inMovies)
     loadTags(tags, inTags)
     loadUsers(users, inUsers)
-    print(filterTagsByCount(movies, tags, users, args.count))
+    filterTagsByCount(movies, tags, users, args.count)
     convertToTagRatings(movies, tags, users)
-
-    f = open('dump.csv', 'w')
-    print('Minimum,Maximum,Average', file = f)
-    for user in users:
-      r = list(zip(*user['ratings']))[1]
-      mn = min(r)
-      mx = max(r)
-      av = sum(r) / len(r)
-      print('{},{},{}'.format(mn, mx, av), file = f)
-      print('{}, {}, {}'.format(mn, mx, av))
-
-    #fitlerTagsByRatings(movies, tags, users)
-    #filterTaglessMovies(movies, tags, users)
+    filterTaglessMovies(movies, tags, users)
+    outputRatingsMatrix(users, len(users), len(tags), 'recommend.mat')
+    outputMovieTagsMatrix(movies, len(movies), len(tags), 'movietags.mat')
+    outputMoviesLookup(movies, 'movies.lookup')
   elif args.output == 'movies':
     loadMovies(movies, inMovies)
     loadUsers(users, inUsers)
     stats = filterMoviesByRatings(movies, users)
-    outputMoviesMatrix(users, stats['numMovies'], stats['numUsers'], 'test.mat')
-    outputMoviesLookup(movies, 'test.lookup')
+    outputRatingsMatrix(users, len(users), len(movies), 'recommend.mat')
+    outputMoviesLookup(movies, 'movies.lookup')
