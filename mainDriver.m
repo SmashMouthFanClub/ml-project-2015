@@ -9,11 +9,11 @@
 
 clc; close all; %clear;
 
-use_test = 0;
+use_test = 1;
 
 % data matrix and movie title file locations
-% f_movie_matrix = 'data/movies.mat';
-f_movie_titles = 'data/test.lookup'; %'data/movie_titles.txt';
+%f_movie_matrix = 'data/test.mat';
+f_movie_titles = 'data/movies.lookup'; %'data/movie_titles.txt';
 
 % load in movie rating data
 plush('\nLoading movie rating data...\n');
@@ -73,6 +73,13 @@ if (use_test > 0)
     plush('...complete.\n\n');
 end
 
+% Reduce dimensionality using SVD
+plush('Dimensionality reduction with SVD...\n');
+[Y_reduced, U_reduce] = svdReduce(Y);
+%Y_reduced = Y;
+%U_reduce = eye(size(Y, 2));
+plush('...complete.\n\n');
+
 % use collaborative filtering to train the model on the movie rating data
 plush('Using fmincg to train collaborative filtering model...\n');
 
@@ -80,10 +87,10 @@ plush('Using fmincg to train collaborative filtering model...\n');
 %Y = [new_ratings Y];
 
 % map R(i,j) to 1 if Y(i,j) is > 0, and 0 otherwise
-R = logical(Y > 0);
+R = logical(Y_reduced > 0);
 
 % perform mean normalization
-[Y_norm, Y_mean] = meanNormData(Y, R);
+[Y_norm, Y_mean] = meanNormData(Y_reduced, R);
 
 % initialize the number of features to use, regularization parameter,
 % and number of iterations to train with
@@ -97,8 +104,7 @@ printf('\tIterations:    %d\n', iterations);
 plush('');
 
 % number of movies are rows, number of users are columns
-num_movies = size(Y, 1);
-num_users = size(Y, 2);
+[num_movies, num_users] = size(Y_reduced);
 
 % randomly initialize X and Theta to small values for collab. filtering
 X = randn(num_movies, num_features);
@@ -141,15 +147,11 @@ clear params;
 % get the recommendation matrix
 recom_matrix = X * Theta';
 
+% Reconstruct approximation of original matrix after training
+recom_matrix = svdReconstruct(recom_matrix, U_reduce);
+
 clear X;
 clear Theta;
-
-%%%% TODO - we're doing SVD wrong right now - we need to apply
-%%%%      - it before learning then do recovery after
-% use SVD to reduce the dimensionality of the matrix
-%plush('Dimensionality reduction with SVD...\n');
-%[recom_matrix, Y_mean] = svdReduce(recom_matrix, Y_mean);
-%plush('...complete.\n\n');
 
 % make a prediction for the user
 %pred = recom_matrix(:,1) + Y_mean;

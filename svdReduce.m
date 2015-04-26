@@ -33,8 +33,8 @@ function [recom_svd, U_reduce] = svdReduce(recom_matrix)
   rm_norm = bsxfun(@rdivide, rm_norm, rm_std);
   
   %% calculate covariance matrix
-  cov_mat = (rm_norm' * rm_norm) / m;
-  
+  cov_mat = cov(recom_matrix);
+
   %% svd of covariance matrix
   [U, S, V] = svd(cov_mat);
   
@@ -53,7 +53,7 @@ function [recom_svd, U_reduce] = svdReduce(recom_matrix)
     endif
   endfor
   
-  printf("Reducing to %d dimensions\n", k);
+  printf("Reducing from %d to %d dimensions\n", size(recom_matrix, 2), k);
   
   %% Take 90% of the dimensions
   U_reduce = U(:, 1:k);
