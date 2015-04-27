@@ -46,13 +46,40 @@ def loadUsers(users, files):
       })
 
 def convertToTagRatings(movies, tags, users):
-  1
+  for user in users:
+    totals = {}
+    for movieIdx, rating in user['ratings']:
+      for idx in movies[movieIdx]['tags']:
+        if idx in totals:
+          total, count = totals[idx]
+          totals[idx] = (total + rating, count + 1)
+        else:
+          totals[idx] = (rating, 1)
+    user['ratings'] = [(idx, totals[idx][0] / totals[idx][1]) for idx in totals.keys()]
+    print(user['id'])
 
-def filterTagsByRatings(tags, users):
-  1
+def filterTagsByCount(movies, tags, users, minHits):
+  oldTagCount = len(tags)
+  tags[:] = [tag for tag in tags if tag['count'] > minHits]
 
-def filterMoviesByTags(movies, tags, minMovies):
-  1
+  tagMap = {}
+  reIndex(tags, tagMap)
+
+  removedTagInstances = 0
+  for movie in movies:
+    oldMovieTags = len(movie['tags'])
+    movie['tags'] = [tagMap[idx] for idx in movie['tags'] if idx in tagMap]
+    removedTagInstances += oldMovieTags - len(movie['tags'])
+
+  return {
+    'removedTags': oldTagCount - len(tags),
+    'removedTagInstances': removedTagInstances
+  }
+
+def filterTaglessMovies(movies, tags, users):
+  movies[:] = [movie for movie in movies if len(movie['tags']) != 0]
+  movieMap = {}
+  reIndex(movies, movieMap)
 
 def filterMoviesByRatings(movies, users):
   ratedMovies = set()
@@ -72,14 +99,26 @@ def filterMoviesByRatings(movies, users):
     'numMovies': len(ratedMovies)
   }
 
-def outputMoviesMatrix(users, numMovies, numUsers, fileName):
+def outputMovieTagsMatrix(movies, numRows, numCols, fileName):
+  f = open(fileName, 'w')
+  print('# name: Z', file = f)
+  print('# type: matrix', file = f)
+  print('# rows: {}'.format(numRows), file = f)
+  print('# columns: {}'.format(numCols), file = f)
+  for movie in movies:
+    tagList = ['0'] * numCols
+    for idx in movie['tags']:
+      tagList[idx] = '1'
+    print(' '.join(tagList), file = f)
+
+def outputRatingsMatrix(users, numRows, numCols, fileName):
   f = open(fileName, 'w')
   print('# name: Y', file = f)
   print('# type: matrix', file = f)
-  print('# rows: {}'.format(numUsers), file = f)
-  print('# columns: {}'.format(numMovies), file = f)
+  print('# rows: {}'.format(numRows), file = f)
+  print('# columns: {}'.format(numCols), file = f)
   for user in users:
-    ratingList = ['0'] * numMovies
+    ratingList = ['0'] * numCols
     for idx, rating in user['ratings']:
       ratingList[idx] = str(rating)
     print(' '.join(ratingList), file = f)
@@ -94,7 +133,7 @@ if __name__ == '__main__':
   subparsers = parser.add_subparsers(dest = 'output')
   subparsers.required = True
   parserTags = subparsers.add_parser('tags')
-  parserTags.add_argument('-t', '--tagcount', default = 2000, type = int)
+  parserTags.add_argument('-c', '--count', default = 1400, type = int)
   parserMovies = subparsers.add_parser('movies')
   args = parser.parse_args()
 
@@ -105,13 +144,15 @@ if __name__ == '__main__':
     loadMovies(movies, inMovies)
     loadTags(tags, inTags)
     loadUsers(users, inUsers)
+    filterTagsByCount(movies, tags, users, args.count)
     convertToTagRatings(movies, tags, users)
-    filterTagsByCount(movies, tags, users, args.tagcount)
-    fitlerTagsByRatings(movies, tags, users)
     filterTaglessMovies(movies, tags, users)
+    outputRatingsMatrix(users, len(users), len(tags), 'recommend.mat')
+    outputMovieTagsMatrix(movies, len(movies), len(tags), 'movietags.mat')
+    outputMoviesLookup(movies, 'movies.lookup')
   elif args.output == 'movies':
     loadMovies(movies, inMovies)
     loadUsers(users, inUsers)
     stats = filterMoviesByRatings(movies, users)
-    outputMoviesMatrix(users, stats['numMovies'], stats['numUsers'], 'test.mat')
-    outputMoviesLookup(movies, 'test.lookup')
+    outputRatingsMatrix(users, len(users), len(movies), 'recommend.mat')
+    outputMoviesLookup(movies, 'movies.lookup')
