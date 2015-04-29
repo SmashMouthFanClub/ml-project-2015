@@ -9,18 +9,18 @@
 
 clc; close all; %clear;
 
-use_test = 1;
+use_test = 0;
 
 % data matrix and movie title file locations
-%f_movie_matrix = 'data/test.mat';
-f_movie_titles = 'data/movies.lookup'; %'data/movie_titles.txt';
+f_movie_matrix = 'data/movies.mat'; %test.mat
+f_movie_titles = 'data/movie_titles.txt';%'data/movies.lookup';
 
 % load in movie rating data
 plush('\nLoading movie rating data...\n');
 
 % this will load a matrix Y containing movie ratings where the rows
 % are movies and columns are users
-%load(f_movie_matrix);
+load(f_movie_matrix);
 plush('...complete.\n\n');
 
 % load in movie titles
@@ -76,8 +76,6 @@ end
 % Reduce dimensionality using SVD
 plush('Dimensionality reduction with SVD...\n');
 [Y_reduced, U_reduce] = svdReduce(Y);
-%Y_reduced = Y;
-%U_reduce = eye(size(Y, 2));
 plush('...complete.\n\n');
 
 % use collaborative filtering to train the model on the movie rating data
@@ -86,7 +84,7 @@ plush('Using fmincg to train collaborative filtering model...\n');
 % add the new ratings to the data
 %Y = [new_ratings Y];
 
-% map R(i,j) to 1 if Y(i,j) is > 0, and 0 otherwise
+% map R(i,j) to 1 if Y_reduced(i,j) is > 0, and 0 otherwise
 R = logical(Y_reduced > 0);
 
 % perform mean normalization
@@ -105,6 +103,7 @@ plush('');
 
 % number of movies are rows, number of users are columns
 [num_movies, num_users] = size(Y_reduced);
+clear Y_reduced;
 
 % randomly initialize X and Theta to small values for collab. filtering
 X = randn(num_movies, num_features);
@@ -134,8 +133,8 @@ t_end = time();
 t_total = t_end - t_start;
 fprintf('Training took %d seconds.\n', t_total);
 
-clear R;
 clear Y_norm;
+clear R;
 
 % unfold the returned values
 X = reshape(params(1:num_movies * num_features), num_movies, num_features);
@@ -149,6 +148,13 @@ recom_matrix = X * Theta';
 
 % Reconstruct approximation of original matrix after training
 recom_matrix = svdReconstruct(recom_matrix, U_reduce);
+clear U_reduce;
+
+% Perform predication truncation
+plush('Performing prediction truncation...\n');
+recom_matrix(recom_matrix < 0) = 0;
+recom_matrix(recom_matrix > 5) = 5;
+plush('...complete.\n\n');
 
 clear X;
 clear Theta;
@@ -175,21 +181,32 @@ clear Theta;
 clear map_id_name;
 %clear new_ratings;
 
+% map R(i,j) to 1 if Y(i,j) is > 0, and 0 otherwise
+R = logical(Y > 0);
+
 % get root-mean-squared-deviation error in comparison
 if (use_test > 0)
     plush('\nGenerating RMSD training error: ');
-    rmse = rootMeanSqErr(Y, recom_matrix);
-    printf("%.4f%%", rmse);
+    rmse = rootMeanSqErr(Y, recom_matrix, R);
+    printf("%.4f", rmse);
     plush('\nGenerating RMSD test error:     ');
-    rmse = rootMeanSqErr(Y_test, recom_matrix(:, 1:num_test_users));
-    printf("%.4f%%\n", rmse);
+    rmse = rootMeanSqErr(Y_test, recom_matrix(:, 1:num_test_users), ...
+                         R(:, 1:num_test_users));
+    clear Y_test;
+    printf("%.4f\n", rmse);
 else
     plush('\nGenerating RMSD error:          ');
-    rmse = rootMeanSqErr(Y, recom_matrix);
-    printf("%.4f%%\n", rmse);
+    rmse = rootMeanSqErr(Y, recom_matrix, R);
+    printf("%.4f\n", rmse);
+    %%%% TODO - remove random guessing once we do better than it
+    foo = 5 * rand(size(recom_matrix,1), size(recom_matrix,2));
+    rmse = rootMeanSqErr(Y, foo, R);
+    printf("Random Guessing:                %.4f\n", rmse);
 end
-printf("Netflix 2006 RMSD error:        0.9525%%\n");
+printf("Netflix 2006 RMSD error:        0.9525\n");
 plush('\n');
+
+clear R;
 
 % plot the cost by iterations using the plotCost function
 info.iterations = iterations;
