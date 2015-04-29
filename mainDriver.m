@@ -9,9 +9,10 @@
 
 clc; close all;% clear;
 
-% 1 = generate a test set, 0 = do not generate test set
+% flags for using a test set, prediction truncation, and SVD
 use_test = 1;
 use_pred_trunc = 1;
+use_svd = 1;
 
 % initialize the number of features to use, regularization parameter,
 % and number of iterations to train with
