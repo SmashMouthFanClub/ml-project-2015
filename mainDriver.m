@@ -7,7 +7,7 @@
 % movie recommendations for a given user.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-clc; close all;% clear;
+clc; close all; clear;
 
 % flags for using a test set, prediction truncation, and SVD
 use_test = 1;
@@ -29,7 +29,7 @@ plush('\nLoading movie rating data...\n');
 
 % this will load a matrix Y containing movie ratings where the rows
 % are movies and columns are users
-%load(f_movie_matrix);
+load(f_movie_matrix);
 plush('...complete.\n\n');
 
 % load in movie titles
@@ -86,10 +86,13 @@ if (use_test > 0)
 end
 
 % Reduce dimensionality using SVD
-plush('Dimensionality reduction with SVD...\n');
-%[Y_reduced, U_reduce] = svdReduce(Y);
-Y_reduced = Y;
-plush('...complete.\n\n');
+if (use_svd == 1)
+  plush('Dimensionality reduction with SVD...\n');
+  [Y_reduced, U_reduce] = svdReduce(Y);
+  plush('...complete.\n\n');
+else
+  Y_reduced = Y;
+end
 
 % use collaborative filtering to train the model on the movie rating data
 plush('Using fmincg to train collaborative filtering model...\n');
@@ -153,8 +156,10 @@ recom_matrix = X * Theta';
 %recom_matrix = recom_matrix .+ 1;
 
 % Reconstruct approximation of original matrix after training
-%recom_matrix = svdReconstruct(recom_matrix, U_reduce);
-%clear U_reduce;
+if (use_svd == 1)
+  recom_matrix = svdReconstruct(recom_matrix, U_reduce);
+  clear U_reduce;
+end
 
 clear X;
 clear Theta;
