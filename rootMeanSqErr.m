@@ -7,9 +7,19 @@
 % recommender system.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function rmse = rootMeanSqErr(Y, recom)
+function rmse = rootMeanSqErr(Y, recom, R)
 
-%%%% TODO: sum or size for Y?
-rmse = sqrt(sum((Y(:) .- recom(:)).^2) / sum(Y(:), 1));
+%%%% TODO: sum or size for Y? or use R? or wat?
+sumR = sum(R(:));
+if (sumR == 0)
+   rmse = 0;
+   return;
+end
+
+rmse = sqrt(sum((R(:).*(Y(:) .- recom(:))).^2) / sumR);
+
+% Below: MAE metric instead (doesn't square errors, i.e. being off by
+% 2 stars doesn't penalize you by 4)
+%rmse = sum(abs(Y(:) .- recom(:))) / sum(Y(:), 1);
 
 end
