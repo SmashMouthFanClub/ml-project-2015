@@ -7,9 +7,17 @@
 % movie recommendations for a given user.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-clc; close all; %clear;
+clc; close all;% clear;
 
+% 1 = generate a test set, 0 = do not generate test set
 use_test = 1;
+use_pred_trunc = 1;
+
+% initialize the number of features to use, regularization parameter,
+% and number of iterations to train with
+num_features = 50;
+lambda       = 10;
+iterations   = 40;
 
 % data matrix and movie title file locations
 f_movie_matrix = 'data/movies.mat'; %test.mat
@@ -20,7 +28,7 @@ plush('\nLoading movie rating data...\n');
 
 % this will load a matrix Y containing movie ratings where the rows
 % are movies and columns are users
-load(f_movie_matrix);
+%load(f_movie_matrix);
 plush('...complete.\n\n');
 
 % load in movie titles
@@ -32,29 +40,29 @@ clear f_movie_matrix;
 clear f_movie_titles;
 
 % add a new user's ratings to the system
-new_ratings = zeros(size(Y, 1), 1);
-new_ratings(1)   = 4;
-new_ratings(7)   = 3;
-new_ratings(12)  = 5;
-new_ratings(54)  = 4;
-new_ratings(64)  = 5;
-new_ratings(66)  = 3;
-new_ratings(69)  = 5;
-new_ratings(98)  = 2;
-new_ratings(183) = 4;
-new_ratings(226) = 5;
-new_ratings(355) = 5;
-
-plush('You rated:\n');
-for i = 1 : length(new_ratings)
-    if (new_ratings(i) > 0)
-        fprintf('\t%.1f for %s\n', ...
-                new_ratings(i), map_id_name{i});
-    end
-end
+%new_ratings = zeros(size(Y, 1), 1);
+%new_ratings(1)   = 4;
+%new_ratings(7)   = 3;
+%new_ratings(12)  = 5;
+%new_ratings(54)  = 4;
+%new_ratings(64)  = 5;
+%new_ratings(66)  = 3;
+%new_ratings(69)  = 5;
+%new_ratings(98)  = 2;
+%new_ratings(183) = 4;
+%new_ratings(226) = 5;
+%new_ratings(355) = 5;
+%
+%plush('You rated:\n');
+%for i = 1 : length(new_ratings)
+%    if (new_ratings(i) > 0)
+%        fprintf('\t%.1f for %s\n', ...
+%                new_ratings(i), map_id_name{i});
+%    end
+%end
 
 % add the new ratings to the data
-Y = [new_ratings Y];
+%Y = [new_ratings Y];
 plush('\n');
 
 % generate a test set - ratings are removed from 1:num_test_users
@@ -91,12 +99,6 @@ R = logical(Y_reduced > 0);
 % perform mean normalization
 %[Y_norm, Y_mean] = meanNormData(Y_reduced, R);
 Y_norm = Y_reduced;
-
-% initialize the number of features to use, regularization parameter,
-% and number of iterations to train with
-num_features = 30;
-lambda       = 10;
-iterations   = 40;
 
 printf('\tFeature count: %d\n', num_features);
 printf('\tLambda:        %d\n', lambda);
@@ -156,38 +158,38 @@ recom_matrix = X * Theta';
 clear X;
 clear Theta;
 
-% Perform predication truncation
-plush('Performing prediction truncation...\n');
-%recom_matrix(recom_matrix < 1) = 1;
-%recom_matrix(recom_matrix > 5) = 5;
-% normalize the values to 1-5 for each user
-recom_matrix = bsxfun(@minus, recom_matrix, min(recom_matrix));
-recom_matrix = bsxfun(@times, recom_matrix, ...
-                      bsxfun(@rdivide, 4, ...
-                             (max(recom_matrix) - min(recom_matrix))));
-recom_matrix = recom_matrix + 1;
+if (use_pred_trunc == 1)
+  % Perform predication truncation by normalization the ratings to 1-5 per user
+  plush('Performing prediction truncation...\n');
 
-plush('...complete.\n\n');
+  recom_matrix = bsxfun(@minus, recom_matrix, min(recom_matrix));
+  recom_matrix = bsxfun(@times, recom_matrix, ...
+                        bsxfun(@rdivide, 4, ...
+                               (max(recom_matrix) - min(recom_matrix))));
+  recom_matrix = recom_matrix + 1;
+
+  plush('...complete.\n\n');
+end
 
 % make a prediction for the user
-pred = recom_matrix(:,1);% + Y_mean;
+%pred = recom_matrix(:,1);% + Y_mean;
 %clear Y_mean;
 
 % sort the vector to get the highest rating movies first
-[tmp, ix] = sort(pred, 'descend');
-clear tmp;
+%[tmp, ix] = sort(pred, 'descend');
+%clear tmp;
 
 % print top 10 recommendations
-plush('Our top 10 recommendations for you:\n');
-for i = 1 : 10
-    j = ix(i);
-    % skip movies that the user already watched
-    %if (new_ratings(j) > 0)
-    %   i = i - 1;
-    %   continue;
-    %end
-    fprintf('\t%.1f for %s\n', pred(j), map_id_name{j});
-end
+%plush('Our top 10 recommendations for you:\n');
+%for i = 1 : 10
+%    j = ix(i);
+%    % skip movies that the user already watched
+%    %if (new_ratings(j) > 0)
+%    %   i = i - 1;
+%    %   continue;
+%    %end
+%    fprintf('\t%.1f for %s\n', pred(j), map_id_name{j});
+%end
 
 clear map_id_name;
 %clear new_ratings;
