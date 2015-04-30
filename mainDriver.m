@@ -72,19 +72,20 @@ plush('');
 % in the Y matrix, and Y_test contains the original ratings for
 % num_test_users users
 if (use_test > 0)
-    plush('Generating test set...\n');
+  plush('Generating test set...\n');
+  compar_Y = Y(1,1:20);
 
-    percent_in_test_set    = .2;
-    percent_ratings_remove = .5;
-    fprintf('\tPercent data in test set:  %d%%\n', ...
-            percent_in_test_set * 100);
-    fprintf('\tPercent ratings extracted: %d%%\n', ...
-            percent_ratings_remove * 100);
-    plush('');
+  percent_in_test_set    = .2;
+  percent_ratings_remove = .5;
+  fprintf('\tPercent data in test set:  %d%%\n', ...
+          percent_in_test_set * 100);
+  fprintf('\tPercent ratings extracted: %d%%\n', ...
+          percent_ratings_remove * 100);
+  plush('');
 
-    [Y, Y_test] = genTestSet(Y, percent_in_test_set, percent_ratings_remove);
-    num_test_users = size(Y_test, 2);
-    plush('...complete.\n\n');
+  [Y, Y_test] = genTestSet(Y, percent_in_test_set, percent_ratings_remove);
+  num_test_users = size(Y_test, 2);
+  plush('...complete.\n\n');
 end
 
 % Reduce dimensionality using SVD
@@ -115,8 +116,8 @@ printf('\tIterations:    %d\n', iterations);
 plush('\n');
 
 % number of movies are rows, number of users are columns
-[num_movies, num_users] = size(Y_reduced);
-%clear Y_reduced;
+[num_movies, num_users] = size(Y_norm);
+clear Y_reduced;
 
 % randomly initialize X and Theta to small values for collab. filtering
 X = randn(num_movies, num_features);
@@ -128,7 +129,7 @@ clear X;
 clear Theta;
 
 % use collaborative filtering to train the model on the movie rating data
-plush('Using fmincg to train collaborative filtering model...\n');
+plush('Training the collaborative filtering model...\n');
 
 %%%%% TODO - why does training on Y_norm and adding back Y_mean
 %%%%%      - only recommend the best rated movies?
@@ -166,6 +167,7 @@ recom_matrix = X * Theta';
 if (use_mean_norm == 1)
   % recover data from mean normalization
   recom_matrix = bsxfun(@plus, recom_matrix, Y_mean);
+  clear Y_mean;
 end
 
 % Reconstruct approximation of original matrix after training
@@ -232,15 +234,17 @@ else
     plush('\nGenerating RMSD error:          ');
     rmse = rootMeanSqErr(Y, recom_matrix, R);
     printf("%.4f\n", rmse);
-    %%%% TODO - remove random guessing once we do better than it
-    %%foo = 5 * rand(size(recom_matrix,1), size(recom_matrix,2));
-    %foo = zeros(size(recom_matrix));
-    %foo(:) = 3;
-    %rmse = rootMeanSqErr(Y, foo, R);
-    %printf("Random Guessing:                %.4f\n", rmse);
 end
 printf("Netflix 2006 RMSD error:        0.9525\n");
 plush('\n');
+
+if (use_test == 1)
+  plush('Comparison: Y vs. recommendations:\n');
+  compar_Y
+  compar_rec = round(recom_matrix(1,1:20));
+  compar_rec
+  plush('\n');
+end
 
 clear R;
 
