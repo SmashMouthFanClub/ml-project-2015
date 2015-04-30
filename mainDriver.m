@@ -9,10 +9,12 @@
 
 clc; close all; clear;
 
-% flags for using a test set, prediction truncation, and SVD
+% flags for using a test set, prediction truncation, SVD,
+% and mean normalization
 use_test = 1;
 use_pred_trunc = 1;
-use_svd = 1;
+use_svd = 0;
+use_mean_norm = 1;
 
 % initialize the number of features to use, regularization parameter,
 % and number of iterations to train with
@@ -64,7 +66,7 @@ clear f_movie_titles;
 
 % add the new ratings to the data
 %Y = [new_ratings Y];
-plush('\n');
+plush('');
 
 % generate a test set - ratings are removed from 1:num_test_users
 % in the Y matrix, and Y_test contains the original ratings for
@@ -94,20 +96,23 @@ else
   Y_reduced = Y;
 end
 
-% use collaborative filtering to train the model on the movie rating data
-plush('Using fmincg to train collaborative filtering model...\n');
-
 % map R(i,j) to 1 if Y_reduced(i,j) is > 0, and 0 otherwise
 R = logical(Y_reduced > 0);
 
 % perform mean normalization
-%[Y_norm, Y_mean] = meanNormData(Y_reduced, R);
-Y_norm = Y_reduced;
+if (use_mean_norm == 1)
+  plush('Applying mean normalization...\n');
+  [Y_norm, Y_mean] = meanNormData(Y_reduced, R);
+  plush('...complete.\n\n');
+else
+  Y_norm = Y_reduced;
+end
 
+plush('Hyperparameters:\n');
 printf('\tFeature count: %d\n', num_features);
 printf('\tLambda:        %d\n', lambda);
 printf('\tIterations:    %d\n', iterations);
-plush('');
+plush('\n');
 
 % number of movies are rows, number of users are columns
 [num_movies, num_users] = size(Y_reduced);
@@ -121,6 +126,9 @@ Theta = randn(num_users, num_features);
 params = [X(:); Theta(:)];
 clear X;
 clear Theta;
+
+% use collaborative filtering to train the model on the movie rating data
+plush('Using fmincg to train collaborative filtering model...\n');
 
 %%%%% TODO - why does training on Y_norm and adding back Y_mean
 %%%%%      - only recommend the best rated movies?
@@ -153,7 +161,12 @@ clear params;
 
 % get the recommendation matrix
 recom_matrix = X * Theta';
-%recom_matrix = recom_matrix .+ 1;
+%recom_matrix = recom_matrix .+ 1; <-- do not do this
+
+if (use_mean_norm == 1)
+  % recover data from mean normalization
+  recom_matrix = bsxfun(@plus, recom_matrix, Y_mean);
+end
 
 % Reconstruct approximation of original matrix after training
 if (use_svd == 1)
@@ -165,7 +178,7 @@ clear X;
 clear Theta;
 
 if (use_pred_trunc == 1)
-  % Perform predication truncation by normalization the ratings to 1-5 per user
+  % Perform predication truncation by normalizing the ratings to 1-5 per user
   plush('Performing prediction truncation...\n');
 
   recom_matrix = bsxfun(@minus, recom_matrix, min(recom_matrix));

@@ -16,8 +16,11 @@ Ymean = zeros(m, 1);
 Ynorm = zeros(size(Y));
 
 for i = 1 : m
-    Ymean(i) = mean(Y(i, R(i, :)));
-    Ynorm(i, R(i, :)) = Y(i, R(i, :)) - Ymean(i);
+    %Ymean(i) = mean(Y(i, R(i, :)));
+    %Ynorm(i, R(i, :)) = Y(i, R(i, :)) - Ymean(i);
+
+    Ymean(i) = sum(Y(i,:) .* R(i,:)) / sum(R(i,:));
+    Ynorm(i,:) = Y(i,:) .- Ymean(i);
 end
 
 end
